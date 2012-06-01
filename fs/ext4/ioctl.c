@@ -117,6 +117,7 @@ long ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 		flags = flags & EXT4_FL_USER_MODIFIABLE;
 		flags |= oldflags & ~EXT4_FL_USER_MODIFIABLE;
+
 		ei->i_flags = flags;
 
 		ext4_set_inode_flags(inode);
