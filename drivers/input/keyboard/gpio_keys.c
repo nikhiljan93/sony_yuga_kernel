@@ -728,7 +728,7 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
 			gpio_keys_gpio_report_event(bdata);
 	}
 	input_sync(input);
-
+	
 	device_init_wakeup(&pdev->dev, wakeup);
 
 	return 0;

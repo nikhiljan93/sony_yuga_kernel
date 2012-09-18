@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.4.61 Kernel Configuration
+# Linux/arm 3.4.62 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -518,8 +518,8 @@ CONFIG_MSM_WATCHDOG=y
 # CONFIG_MSM_WATCHDOG_V2 is not set
 # CONFIG_MSM_MEMORY_DUMP is not set
 CONFIG_MSM_DLOAD_MODE=y
+CONFIG_MSM_JTAG=y
 # CONFIG_MSM_JTAG_MM is not set
-# CONFIG_MSM_SLEEP_STATS_DEVICE is not set
 CONFIG_MSM_RUN_QUEUE_STATS=y
 # CONFIG_MSM_STANDALONE_POWER_COLLAPSE is not set
 # CONFIG_MSM_GSBI7_UART is not set
