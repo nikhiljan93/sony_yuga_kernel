@@ -1669,6 +1669,12 @@ config MSM_CPU_FREQ_SUSPEND_MAX
 	depends on MSM_CPU_FREQ_SET_MIN_MAX
 	default 702000
 
+config INTELLI_PLUG
+	bool "Enable intelli-plug cpu hotplug driver"
+	default n
+	help
+	  Generic Intelli-plug cpu hotplug driver for ARM SOCs
+
 config MSM_CPU_FREQ_SUSPEND_MIN
 	int "Min Suspend CPU Frequency"
 	depends on MSM_CPU_FREQ_SET_MIN_MAX
