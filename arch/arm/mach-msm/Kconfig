@@ -1696,9 +1696,12 @@ endif # CPU_FREQ_MSM
 
 config CPU_OVERCLOCK
 	bool "Enable CPU Overclocking option"
+
+config SIMPLE_PLUG
+	bool "Enable simple-plug cpu hotplug driver"
 	default n
 	help
-	  Enable CPU overclock for kraig apq8064 socs
+	  Generic simple-plug cpu hotplug driver for ARM SOCs
 
 config MSM_CPUFREQ_LIMITER
 	tristate "MSM CPU frequency limiter"
