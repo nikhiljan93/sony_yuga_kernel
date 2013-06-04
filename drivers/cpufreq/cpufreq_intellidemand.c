@@ -5,6 +5,7 @@
  *            (C)  2003 Venkatesh Pallipadi <venkatesh.pallipadi@intel.com>.
  *                      Jun Nakajima <jun.nakajima@intel.com>
  *            (C)  2012 Paul Reioux <reioux@gmail.com>
+ *            (C)  2013 Paul Reioux <reioux@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -60,6 +61,10 @@
 #define DBS_SYNC_FREQ				(702000)
 #define DBS_OPTIMAL_FREQ			(1296000)
 
+#ifdef CONFIG_CPUFREQ_ID_PERFLOCK
+#define DBS_PERFLOCK_MIN_FREQ			(594000)
+#endif
+
 static u64 freq_boosted_time;
 /*
  * The polling frequency of this governor depends on the capability of
@@ -92,7 +97,7 @@ static u64 sampling_rate_boosted_time;
 static unsigned int current_sampling_rate;
 
 #ifdef CONFIG_CPUFREQ_ID_PERFLOCK
-static unsigned int saved_policy_min;
+static unsigned int saved_policy_min = 0;
 #endif
 
 static void do_dbs_timer(struct work_struct *work);
@@ -1346,6 +1351,19 @@ static void do_dbs_timer(struct work_struct *work)
 		if (rq_persist_count > 0)
 			rq_persist_count--;
 
+#ifdef CONFIG_CPUFREQ_ID_PERFLOCK
+	if (cpu == 0) {
+		if (num_online_cpus() >= 2) {
+			if (saved_policy_min != 0)
+				policy->min = saved_policy_min;
+		} else if (num_online_cpus() == 1) {
+			saved_policy_min = policy->min;
+			policy->min = DBS_PERFLOCK_MIN_FREQ;
+		}
+	}
+#endif
+
+#ifdef CONFIG_CPUFREQ_LIMIT_MAX_FREQ
 	if (rq_persist_count > 3) {
 		lmf_browsing_state = false;
 		rq_persist_count = 0;
@@ -1354,7 +1372,6 @@ static void do_dbs_timer(struct work_struct *work)
 		lmf_browsing_state = true;
 	//pr_info("Run Queue Average: %u\n", rq_info.rq_avg);
 
-#ifdef CONFIG_CPUFREQ_LIMIT_MAX_FREQ
 	if (!lmf_browsing_state && lmf_screen_state)
 	{
 		if (cpu == BOOT_CPU)
@@ -1880,10 +1897,10 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		this_dbs_info->cur_policy = NULL;
 		if (!cpu)
 			input_unregister_handler(&dbs_input_handler);
-		mutex_unlock(&dbs_mutex);
 		if (!dbs_enable)
 			sysfs_remove_group(cpufreq_global_kobject,
 					   &dbs_attr_group);
+		mutex_unlock(&dbs_mutex);
 
 		break;
 
