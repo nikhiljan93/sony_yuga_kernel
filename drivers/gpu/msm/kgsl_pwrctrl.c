@@ -371,6 +371,36 @@ static int _get_nearest_pwrlevel(struct kgsl_pwrctrl *pwr, unsigned int clock)
 	return -ERANGE;
 }
 
+void set_max_gpuclk_so(unsigned long val)
+{
+	struct kgsl_pwrctrl *pwr;
+	int ret, level;
+
+	pwr = &Gbldevice->pwrctrl;
+	
+	if (val == 0)
+		val = orig_max;
+	else if (val != 0 && orig_max == 0)
+		orig_max = pwr->pwrlevels[pwr->thermal_pwrlevel].gpu_freq;
+		
+	mutex_lock(&Gbldevice->mutex);
+	level = _get_nearest_pwrlevel(pwr, val);
+	if (level < 0)
+		goto done;
+
+	pwr->thermal_pwrlevel = level;
+
+	if (pwr->thermal_pwrlevel > pwr->active_pwrlevel)
+		kgsl_pwrctrl_pwrlevel_change(Gbldevice, pwr->thermal_pwrlevel);
+
+done:
+	mutex_unlock(&Gbldevice->mutex);
+	
+}
+
+extern void SetGPUpll_config(u32 loc, unsigned long freq);
+extern void SetMAXGPUFreq(unsigned long freq);
+
 static int kgsl_pwrctrl_max_gpuclk_store(struct device *dev,
 					 struct device_attribute *attr,
 					 const char *buf, size_t count)
@@ -388,6 +418,31 @@ static int kgsl_pwrctrl_max_gpuclk_store(struct device *dev,
 	ret = sscanf(buf, "%ld", &val);
 	if (ret != 1)
 		return count;
+
+	if (val == 450000000)
+	{
+		//pwr->pwrlevels[0].gpu_freq = val;
+		//SetMAXGPUFreq(val);
+		SetGPUpll_config(0x21, val);
+	}
+	else if (val == 504000000)
+	{
+		//pwr->pwrlevels[0].gpu_freq = val;
+		//SetMAXGPUFreq(val);
+		SetGPUpll_config(0x25, val);
+	}
+	else if (val == 544000000)
+	{
+		//pwr->pwrlevels[0].gpu_freq = val;
+		//SetMAXGPUFreq(val);
+		SetGPUpll_config(0x28, val);
+	}
+	else if (val == 600000000)
+	{
+		//pwr->pwrlevels[0].gpu_freq = val;
+		//SetMAXGPUFreq(val);
+		SetGPUpll_config(0x2C, val);
+	}
 
 	mutex_lock(&device->mutex);
 	level = _get_nearest_pwrlevel(pwr, val);
