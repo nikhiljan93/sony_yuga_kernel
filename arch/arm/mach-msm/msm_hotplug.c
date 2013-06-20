@@ -231,7 +231,7 @@ static void msm_hotplug_fn(struct work_struct *work)
 	cur_load = st->current_load;
 	online_cpus = st->online_cpus;
 
-	if (online_cpus == st->min_cpus && mako_boosted) {
+	if (online_cpus == st->min_cpus /*&& mako_boosted*/) {
 		dprintk("%s: cur_load: %3u online_cpus: %u mako_boosted\n",
 			MSM_HOTPLUG, cur_load, online_cpus);
 		online_cpu(st->min_cpus + 1);
@@ -594,7 +594,7 @@ static void __exit msm_hotplug_device_exit(void)
 	kfree(st->load_hist);
 }
 
-EXPORT_SYMBOL_GPL(msm_hotplug_device_init);
+EXPORT_SYMBOL_GPL(msm_hotplug_device_exit);
 
 late_initcall(msm_hotplug_device_init);
 module_exit(msm_hotplug_device_exit);
