@@ -924,10 +924,10 @@ static inline void cpuacct_charge(struct task_struct *tsk, u64 cputime) {}
  * 25 ~=  33554432ns =  33.5ms
  * 24 ~=  16777216ns =  16.8ms
  */
-#define NR_AVE_PERIOD_EXP  27
-#define NR_AVE_SCALE(x)    ((x) << FSHIFT)
-#define NR_AVE_PERIOD    (1 << NR_AVE_PERIOD_EXP)
-#define NR_AVE_DIV_PERIOD(x)  ((x) >> NR_AVE_PERIOD_EXP)
+#define NR_AVE_PERIOD_EXP	27
+#define NR_AVE_SCALE(x)		((x) << FSHIFT)
+#define NR_AVE_PERIOD		(1 << NR_AVE_PERIOD_EXP)
+#define NR_AVE_DIV_PERIOD(x)	((x) >> NR_AVE_PERIOD_EXP)
 
 static inline unsigned int do_avg_nr_running(struct rq *rq)
 {
@@ -960,7 +960,6 @@ static inline void dec_nr_running(struct rq *rq)
 {
 
 	sched_update_nr_prod(cpu_of(rq), rq->nr_running, false);
-
 	write_seqcount_begin(&rq->ave_seqcnt);
 	rq->ave_nr_running = do_avg_nr_running(rq);
 	rq->nr_last_stamp = rq->clock_task;
