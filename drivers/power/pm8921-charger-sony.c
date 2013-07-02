@@ -90,7 +90,7 @@
 #define OVP_USB_UVD		0x2B7
 
 /* check EOC every 10 seconds */
-#define EOC_CHECK_PERIOD_MS	10000
+#define EOC_CHECK_PERIOD_MS	50000
 /* check for USB unplug every 200 msecs */
 #define UNPLUG_CHECK_WAIT_PERIOD_MS 200
 #define USB_TRIM_ENTRIES 16
