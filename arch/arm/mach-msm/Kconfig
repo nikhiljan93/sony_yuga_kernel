@@ -2312,9 +2312,6 @@ config MSM_ETM
 	help
 	  Enables embedded trace collection on MSM8660
 
-config MSM_SLEEP_STATS_DEVICE
-	bool "Enable exporting of MSM sleep device stats to userspace"
-
 config MSM_RUN_QUEUE_STATS
 	bool "Enable collection and exporting of MSM Run Queue stats to userspace"
 	depends on (MSM_SOC_REV_A || ARCH_MSM8X60 || ARCH_MSM8960)
