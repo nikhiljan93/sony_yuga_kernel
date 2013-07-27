@@ -1687,6 +1687,12 @@ config MSM_CPU_FREQ_SUSPEND_MIN
 
 endif # CPU_FREQ_MSM
 
+config CPU_OVERCLOCK
+	bool "Enable CPU Overclocking option"
+	default n
+	help
+	  Enable CPU overclock for kraig apq8064 socs
+
 config MSM_AVS_HW
 	bool "Enable Adaptive Voltage Scaling (AVS)"
 	default n
