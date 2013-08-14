@@ -90,8 +90,8 @@ struct work_struct hotplug_boost_online_work;
 static unsigned int history[SAMPLING_PERIODS];
 static unsigned int index;
 
-static unsigned int min_online_cpus = 1;
-static unsigned int max_online_cpus;
+static unsigned int min_online_cpus = 2;
+static unsigned int max_online_cpus = 2;
 
 static int min_online_cpus_set(const char *arg, const struct kernel_param *kp)
 {
@@ -410,8 +410,6 @@ int __init auto_hotplug_init(void)
 {
 	pr_info("auto_hotplug: v0.220 by _thalamus\n");
 	pr_info("auto_hotplug: %d CPUs detected\n", CPUS_AVAILABLE);
-
-    max_online_cpus = num_possible_cpus();
     
 	INIT_DELAYED_WORK(&hotplug_decision_work, hotplug_decision_work_fn);
 	INIT_DELAYED_WORK_DEFERRABLE(&hotplug_unpause_work, hotplug_unpause_work_fn);
