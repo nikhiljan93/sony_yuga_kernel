@@ -93,6 +93,8 @@ static unsigned int index;
 static unsigned int min_online_cpus = 2;
 static unsigned int max_online_cpus = 2;
 
+static unsigned int min_sampling_rate;
+
 static int min_online_cpus_set(const char *arg, const struct kernel_param *kp)
 {
     int ret;
@@ -231,7 +233,7 @@ static void hotplug_decision_work_fn(struct work_struct *work)
 			schedule_work(&hotplug_online_all_work);
 			return;
 		} else if (flags & HOTPLUG_PAUSED) {
-			schedule_delayed_work_on(0, &hotplug_decision_work, MIN_SAMPLING_RATE);
+			schedule_delayed_work_on(0, &hotplug_decision_work, min_sampling_rate);
 			return;
 		} else if ((avg_running >= enable_load) && (online_cpus < available_cpus) && (max_online_cpus > online_cpus)) {
 			pr_info("auto_hotplug: Onlining single CPU, avg running: %d\n", avg_running);
@@ -256,7 +258,7 @@ static void hotplug_decision_work_fn(struct work_struct *work)
 	/*
 	 * Reduce the sampling rate dynamically based on online cpus.
 	 */
-	sampling_rate = MIN_SAMPLING_RATE * (online_cpus * online_cpus);
+	sampling_rate = min_sampling_rate * (online_cpus);
 #if DEBUG
 	pr_info("sampling_rate is: %d\n", jiffies_to_msecs(sampling_rate));
 #endif
@@ -275,7 +277,7 @@ static void __cpuinit hotplug_online_all_work_fn(struct work_struct *work)
 	}
 
 	schedule_delayed_work(&hotplug_unpause_work, HZ);
-	schedule_delayed_work_on(0, &hotplug_decision_work, MIN_SAMPLING_RATE);
+	schedule_delayed_work_on(0, &hotplug_decision_work, min_sampling_rate);
 }
 
 static void hotplug_offline_all_work_fn(struct work_struct *work)
@@ -302,7 +304,7 @@ static void __cpuinit hotplug_online_single_work_fn(struct work_struct *work)
 			}
 		}
 	}
-	schedule_delayed_work_on(0, &hotplug_decision_work, MIN_SAMPLING_RATE);
+	schedule_delayed_work_on(0, &hotplug_decision_work, min_sampling_rate);
 }
 
 static void hotplug_offline_work_fn(struct work_struct *work)
@@ -315,7 +317,7 @@ static void hotplug_offline_work_fn(struct work_struct *work)
 			break;
 		}
 	}
-	schedule_delayed_work_on(0, &hotplug_decision_work, MIN_SAMPLING_RATE);
+	schedule_delayed_work_on(0, &hotplug_decision_work, min_sampling_rate);
 }
 
 static void hotplug_unpause_work_fn(struct work_struct *work)
@@ -371,7 +373,7 @@ inline void hotplug_boostpulse(void)
 				cancel_delayed_work(&hotplug_offline_work);
 				flags |= HOTPLUG_PAUSED;
 				schedule_delayed_work(&hotplug_unpause_work, HZ);
-				schedule_delayed_work_on(0, &hotplug_decision_work, MIN_SAMPLING_RATE);
+				schedule_delayed_work_on(0, &hotplug_decision_work, min_sampling_rate);
 			}
 		}
 	}
@@ -410,6 +412,9 @@ int __init auto_hotplug_init(void)
 {
 	pr_info("auto_hotplug: v0.220 by _thalamus\n");
 	pr_info("auto_hotplug: %d CPUs detected\n", CPUS_AVAILABLE);
+
+	// initial minimum sampling rate
+	min_sampling_rate = MIN_SAMPLING_RATE;
     
 	INIT_DELAYED_WORK(&hotplug_decision_work, hotplug_decision_work_fn);
 	INIT_DELAYED_WORK_DEFERRABLE(&hotplug_unpause_work, hotplug_unpause_work_fn);
