@@ -1,0 +1,49 @@
+--- block/row-iosched.c
++++ block/row-iosched.c
+@@ -998,35 +994,35 @@
+ 	return ret;							\
+ }
+ STORE_FUNCTION(row_hp_read_quantum_store,
+-&rowd->row_queues[ROWQ_PRIO_HIGH_READ].disp_quantum, 1, INT_MAX, 0);
++&rowd->row_queues[ROWQ_PRIO_HIGH_READ].disp_quantum, 1, INT_MAX);
+ STORE_FUNCTION(row_rp_read_quantum_store,
+ 			&rowd->row_queues[ROWQ_PRIO_REG_READ].disp_quantum,
+-			1, INT_MAX, 0);
++			1, INT_MAX);
+ STORE_FUNCTION(row_hp_swrite_quantum_store,
+ 			&rowd->row_queues[ROWQ_PRIO_HIGH_SWRITE].disp_quantum,
+-			1, INT_MAX, 0);
++			1, INT_MAX);
+ STORE_FUNCTION(row_rp_swrite_quantum_store,
+ 			&rowd->row_queues[ROWQ_PRIO_REG_SWRITE].disp_quantum,
+-			1, INT_MAX, 0);
++			1, INT_MAX);
+ STORE_FUNCTION(row_rp_write_quantum_store,
+ 			&rowd->row_queues[ROWQ_PRIO_REG_WRITE].disp_quantum,
+-			1, INT_MAX, 0);
++			1, INT_MAX);
+ STORE_FUNCTION(row_lp_read_quantum_store,
+ 			&rowd->row_queues[ROWQ_PRIO_LOW_READ].disp_quantum,
+-			1, INT_MAX, 0);
++			1, INT_MAX);
+ STORE_FUNCTION(row_lp_swrite_quantum_store,
+ 			&rowd->row_queues[ROWQ_PRIO_LOW_SWRITE].disp_quantum,
+-			1, INT_MAX, 0);
++			1, INT_MAX);
+ STORE_FUNCTION(row_rd_idle_data_store, &rowd->rd_idle_data.idle_time_ms,
+-			1, INT_MAX, 0);
++			1, INT_MAX);
+ STORE_FUNCTION(row_rd_idle_data_freq_store, &rowd->rd_idle_data.freq_ms,
+-			1, INT_MAX, 0);
++			1, INT_MAX);
+ STORE_FUNCTION(row_reg_starv_limit_store,
+ 			&rowd->reg_prio_starvation.starvation_limit,
+-			1, INT_MAX, 0);
++			1, INT_MAX);
+ STORE_FUNCTION(row_low_starv_limit_store,
+ 			&rowd->low_prio_starvation.starvation_limit,
+-			1, INT_MAX, 0);
++			1, INT_MAX);
+ 
+ #undef STORE_FUNCTION
+ 
