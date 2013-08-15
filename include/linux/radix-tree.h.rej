@@ -1,0 +1,15 @@
+--- include/linux/radix-tree.h
++++ include/linux/radix-tree.h
+@@ -368,8 +368,11 @@
+ 			iter->index++;
+ 			if (likely(*slot))
+ 				return slot;
+-			if (flags & RADIX_TREE_ITER_CONTIG)
++			if (flags & RADIX_TREE_ITER_CONTIG) {
++				/* forbid switching to the next chunk */
++				iter->next_index = 0;
+ 				break;
++			}
+ 		}
+ 	}
+ 	return NULL;
