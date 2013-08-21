@@ -333,12 +333,10 @@ extern bool lmf_screen_state;
 
 static void msm_cpu_early_suspend(struct early_suspend *h)
 {
-
-#ifdef CONFIG_CPU_FREQ_GOV_INTELLIDEMAND
+#ifdef CONFIG_CPUFREQ_LIMIT_MAX_FREQ
 	int cpu = 0;
 
 	for_each_possible_cpu(cpu) {
-
 		mutex_lock(&per_cpu(cpufreq_suspend, cpu).suspend_mutex);
 		lmf_screen_state = false;
 		// put rest of the cores to sleep!
@@ -353,13 +351,11 @@ static void msm_cpu_early_suspend(struct early_suspend *h)
 		mutex_unlock(&per_cpu(cpufreq_suspend, cpu).suspend_mutex);
 	}
 #endif
-
 }
 
 static void msm_cpu_late_resume(struct early_suspend *h)
 {
-
-#ifdef CONFIG_CPU_FREQ_GOV_INTELLIDEMAND
+#ifdef CONFIG_CPUFREQ_LIMIT_MAX_FREQ
 	int cpu = 0;
 
 	for_each_possible_cpu(cpu) {
@@ -369,7 +365,6 @@ static void msm_cpu_late_resume(struct early_suspend *h)
 		mutex_unlock(&per_cpu(cpufreq_suspend, cpu).suspend_mutex);
 	}
 #endif
-
 }
 
 static struct early_suspend msm_cpu_early_suspend_handler = {
