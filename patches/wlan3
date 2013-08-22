@@ -1,0 +1,51 @@
+From 43e908442961321ef63ecc1568b2b1fa9c801723 Mon Sep 17 00:00:00 2001
+From: Sameer Thalappil <sameert@codeaurora.org>
+Date: Fri, 31 May 2013 14:01:25 -0700
+Subject: [PATCH] wcnss: Prevent access to WCNSS driver after a failure
+
+Once the WCNSS driver trigger fails, the WCNSS platform driver main
+environment is set to NULL. Any further access to WCNSS platform driver
+should be prevented after this.
+
+Change-Id: I6d391a347a144c31b70db0fd74904e5d1e020692
+CRs-Fixed: 458741
+Signed-off-by: Sameer Thalappil <sameert@codeaurora.org>
+---
+ drivers/net/wireless/wcnss/wcnss_wlan.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/wcnss/wcnss_wlan.c b/drivers/net/wireless/wcnss/wcnss_wlan.c
+index c85e20a..98fd92d 100644
+--- a/drivers/net/wireless/wcnss/wcnss_wlan.c
++++ b/drivers/net/wireless/wcnss/wcnss_wlan.c
+@@ -1404,6 +1404,9 @@ static int wcnss_node_open(struct inode *inode, struct file *file)
+ {
+ 	struct platform_device *pdev;
+ 
++	if (!penv)
++		return -EFAULT;
++
+ 	/* first open is only to trigger WCNSS platform driver */
+ 	if (!penv->triggered) {
+ 		pr_info(DEVICE " triggered by userspace\n");
+@@ -1431,7 +1434,7 @@ static ssize_t wcnss_wlan_read(struct file *fp, char __user
+ {
+ 	int rc = 0;
+ 
+-	if (!penv->device_opened)
++	if (!penv || !penv->device_opened)
+ 		return -EFAULT;
+ 
+ 	rc = wait_event_interruptible(penv->read_wait, penv->fw_cal_rcvd
+@@ -1470,7 +1473,7 @@ static ssize_t wcnss_wlan_write(struct file *fp, const char __user
+ 	int rc = 0;
+ 	int size = 0;
+ 
+-	if (!penv->device_opened || penv->user_cal_available)
++	if (!penv || !penv->device_opened || penv->user_cal_available)
+ 		return -EFAULT;
+ 
+ 	if (penv->user_cal_rcvd == 0 && count >= 4
+-- 
+1.8.1.6
+
