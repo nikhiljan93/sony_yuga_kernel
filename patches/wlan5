@@ -1,0 +1,68 @@
+From 681d28c970757f5df86165d6d8f6480e52f10d0d Mon Sep 17 00:00:00 2001
+From: Sameer Thalappil <sameert@codeaurora.org>
+Date: Wed, 19 Jun 2013 14:40:27 -0700
+Subject: [PATCH] wcnss: Add API to expose the IRIS XO mode set
+
+IRIS XO mode can be configured thru module parameter; and it can also
+be auto detected. Add an API to expose the IRIS XO mode set. WLAN driver
+can use this API for it's XO specific operation.
+
+Change-Id: If40ae715f5e400e13a6fc9588d2bd144958ee8c2
+Signed-off-by: Sameer Thalappil <sameert@codeaurora.org>
+---
+ drivers/net/wireless/wcnss/wcnss_wlan.c | 13 +++++++++++++
+ include/linux/wcnss_wlan.h              |  7 +++++++
+ 2 files changed, 20 insertions(+)
+
+diff --git a/drivers/net/wireless/wcnss/wcnss_wlan.c b/drivers/net/wireless/wcnss/wcnss_wlan.c
+index a435cba..d11ecd5 100644
+--- a/drivers/net/wireless/wcnss/wcnss_wlan.c
++++ b/drivers/net/wireless/wcnss/wcnss_wlan.c
+@@ -688,6 +688,19 @@ static int enable_wcnss_suspend_notify_set(const char *val,
+ module_param_call(enable_wcnss_suspend_notify, enable_wcnss_suspend_notify_set,
+ 		param_get_int, &enable_wcnss_suspend_notify, S_IRUGO | S_IWUSR);
+ 
++int wcnss_wlan_iris_xo_mode(void)
++{
++	if (!penv || !penv->pdev || !penv->smd_channel_ready)
++		return -ENODEV;
++
++	if (penv->wlan_config.use_48mhz_xo)
++		return WCNSS_XO_48MHZ;
++	else
++		return WCNSS_XO_19MHZ;
++}
++EXPORT_SYMBOL(wcnss_wlan_iris_xo_mode);
++
++
+ static void wcnss_suspend_notify(void)
+ {
+ 	void __iomem *pmu_spare_reg;
+diff --git a/include/linux/wcnss_wlan.h b/include/linux/wcnss_wlan.h
+index 4c99e77..2180dbb 100644
+--- a/include/linux/wcnss_wlan.h
++++ b/include/linux/wcnss_wlan.h
+@@ -25,6 +25,12 @@ struct wcnss_wlan_config {
+ 	int		use_48mhz_xo;
+ };
+ 
++enum {
++	WCNSS_XO_48MHZ = 1,
++	WCNSS_XO_19MHZ,
++	WCNSS_XO_INVALID,
++};
++
+ #define WCNSS_WLAN_IRQ_INVALID -1
+ #define HAVE_WCNSS_RESET_INTR 1
+ #define HAVE_WCNSS_CAL_DOWNLOAD 1
+@@ -58,6 +64,7 @@ int wcnss_wlan_power(struct device *dev,
+ void *wcnss_prealloc_get(unsigned int size);
+ int wcnss_prealloc_put(void *ptr);
+ int wcnss_device_ready(void);
++int wcnss_wlan_iris_xo_mode(void);
+ 
+ #define wcnss_wlan_get_drvdata(dev) dev_get_drvdata(dev)
+ #define wcnss_wlan_set_drvdata(dev, data) dev_set_drvdata((dev), (data))
+-- 
+1.8.1.6
+

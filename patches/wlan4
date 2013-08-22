@@ -1,0 +1,72 @@
+From 2923ec9c198ae8657d8ec48747d72171c8181cbd Mon Sep 17 00:00:00 2001
+From: Sameer Thalappil <sameert@codeaurora.org>
+Date: Thu, 25 Jul 2013 19:12:55 -0700
+Subject: [PATCH] wcnss: Do not log CCPU registers
+
+Accessing CCPU registers during WDI timeout can cause timeout issues
+when common_ss is power collapsed. So remove the CCPU register dump from
+reset intrrupt API.
+
+Change-Id: I4945d827c1840e85e796c276c45f7cf23cbe2b2a
+CRs-Fixed: 517940
+Signed-off-by: Sameer Thalappil <sameert@codeaurora.org>
+---
+ drivers/net/wireless/wcnss/wcnss_wlan.c | 35 ---------------------------------
+ 1 file changed, 35 deletions(-)
+
+diff --git a/drivers/net/wireless/wcnss/wcnss_wlan.c b/drivers/net/wireless/wcnss/wcnss_wlan.c
+index 98fd92d..a435cba 100644
+--- a/drivers/net/wireless/wcnss/wcnss_wlan.c
++++ b/drivers/net/wireless/wcnss/wcnss_wlan.c
+@@ -327,40 +327,6 @@ static DEVICE_ATTR(wcnss_version, S_IRUSR,
+ 		wcnss_version_show, NULL);
+ 
+ 
+-/* wcnss_reset_intr() is invoked when host drivers fails to
+- * communicate with WCNSS over SMD; so logging these registers
+- * helps to know WCNSS failure reason */
+-static void wcnss_log_ccpu_regs(void)
+-{
+-	void __iomem *ccu_base;
+-	void __iomem *ccu_reg;
+-	u32 reg = 0;
+-
+-	ccu_base = ioremap(MSM_RIVA_CCU_BASE, SZ_512);
+-	if (!ccu_base) {
+-		pr_err("%s: ioremap WCNSS CCU reg failed\n", __func__);
+-		return;
+-	}
+-
+-	ccu_reg = ccu_base + CCU_INVALID_ADDR_OFFSET;
+-	reg = readl_relaxed(ccu_reg);
+-	pr_info("%s: CCU_CCPU_INVALID_ADDR %08x\n", __func__, reg);
+-
+-	ccu_reg = ccu_base + CCU_LAST_ADDR0_OFFSET;
+-	reg = readl_relaxed(ccu_reg);
+-	pr_info("%s: CCU_CCPU_LAST_ADDR0 %08x\n", __func__, reg);
+-
+-	ccu_reg = ccu_base + CCU_LAST_ADDR1_OFFSET;
+-	reg = readl_relaxed(ccu_reg);
+-	pr_info("%s: CCU_CCPU_LAST_ADDR1 %08x\n", __func__, reg);
+-
+-	ccu_reg = ccu_base + CCU_LAST_ADDR2_OFFSET;
+-	reg = readl_relaxed(ccu_reg);
+-	pr_info("%s: CCU_CCPU_LAST_ADDR2 %08x\n", __func__, reg);
+-
+-	iounmap(ccu_base);
+-}
+-
+ void wcnss_riva_dump_pmic_regs(void)
+ {
+ 	int i, rc;
+@@ -383,7 +349,6 @@ void wcnss_riva_dump_pmic_regs(void)
+ /* interface to reset Riva by sending the reset interrupt */
+ void wcnss_reset_intr(void)
+ {
+-	wcnss_log_ccpu_regs();
+ 	wcnss_riva_dump_pmic_regs();
+ 	wmb();
+ 	__raw_writel(1 << 24, MSM_APCS_GCC_BASE + 0x8);
+-- 
+1.8.1.6
+

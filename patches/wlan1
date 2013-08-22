@@ -1,0 +1,245 @@
+From e8b3f6873304c7758a3ef93d546a8091dbfe4cfa Mon Sep 17 00:00:00 2001
+From: Sameer Thalappil <sameert@codeaurora.org>
+Date: Mon, 10 Sep 2012 11:58:33 -0700
+Subject: [PATCH] wcnss: Pre-alloc memory for WLAN driver
+
+WLAN driver will use this pre-allocated memory (when available) for
+large memory allocations; this will prevent WLAN driver load
+failures because of the un-availability of the large size slabs
+during module load.
+
+Change-Id: I8a8139bdf343ddc871036f6d5c6ab90993816de0
+CRs-Fixed: 369983
+Signed-off-by: Sameer Thalappil <sameert@codeaurora.org>
+---
+ drivers/net/wireless/Kconfig                |   6 ++
+ drivers/net/wireless/wcnss/Makefile         |   1 +
+ drivers/net/wireless/wcnss/wcnss_prealloc.c | 103 ++++++++++++++++++++++++++++
+ drivers/net/wireless/wcnss/wcnss_prealloc.h |  19 +++++
+ drivers/net/wireless/wcnss/wcnss_wlan.c     |  16 ++++-
+ include/linux/wcnss_wlan.h                  |   2 +
+ 6 files changed, 146 insertions(+), 1 deletion(-)
+ create mode 100644 drivers/net/wireless/wcnss/wcnss_prealloc.c
+ create mode 100644 drivers/net/wireless/wcnss/wcnss_prealloc.h
+
+diff --git a/drivers/net/wireless/Kconfig b/drivers/net/wireless/Kconfig
+index 914f4fb..cfe4ca0 100644
+--- a/drivers/net/wireless/Kconfig
++++ b/drivers/net/wireless/Kconfig
+@@ -303,6 +303,12 @@ config WCNSS_CORE
+ 	---help---
+ 	  Core driver for the Qualcomm WCNSS triple play connectivity subsystem
+ 
++config WCNSS_MEM_PRE_ALLOC
++	tristate "WCNSS pre-alloc memory support"
++	depends on WCNSS_CORE
++	---help---
++	  Pre-allocate memory for the WLAN driver module
++
+ source "drivers/net/wireless/ath/Kconfig"
+ source "drivers/net/wireless/b43/Kconfig"
+ source "drivers/net/wireless/b43legacy/Kconfig"
+diff --git a/drivers/net/wireless/wcnss/Makefile b/drivers/net/wireless/wcnss/Makefile
+index c077848..8d50d19 100644
+--- a/drivers/net/wireless/wcnss/Makefile
++++ b/drivers/net/wireless/wcnss/Makefile
+@@ -4,3 +4,4 @@
+ wcnsscore-objs += wcnss_wlan.o wcnss_riva.o qcomwlan_secif.o
+ 
+ obj-$(CONFIG_WCNSS_CORE) += wcnsscore.o
++obj-$(CONFIG_WCNSS_MEM_PRE_ALLOC) += wcnss_prealloc.o
+diff --git a/drivers/net/wireless/wcnss/wcnss_prealloc.c b/drivers/net/wireless/wcnss/wcnss_prealloc.c
+new file mode 100644
+index 0000000..7d10657
+--- /dev/null
++++ b/drivers/net/wireless/wcnss/wcnss_prealloc.c
+@@ -0,0 +1,103 @@
++/* Copyright (c) 2012, The Linux Foundation. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 and
++ * only version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++#include <linux/module.h>
++#include <linux/slab.h>
++#include <linux/err.h>
++#include <linux/wcnss_wlan.h>
++
++static DEFINE_MUTEX(alloc_lock);
++
++struct wcnss_prealloc {
++	int occupied;
++	unsigned int size;
++	void *ptr;
++};
++
++/* pre-alloced mem for WLAN driver */
++static struct wcnss_prealloc wcnss_allocs[] = {
++	{0, 8  * 1024, NULL},
++	{0, 8  * 1024, NULL},
++	{0, 8  * 1024, NULL},
++	{0, 8  * 1024, NULL},
++	{0, 32 * 1024, NULL},
++	{0, 32 * 1024, NULL},
++	{0, 32 * 1024, NULL},
++	{0, 32 * 1024, NULL},
++	{0, 32 * 1024, NULL},
++	{0, 32 * 1024, NULL},
++	{0, 32 * 1024, NULL},
++	{0, 64 * 1024, NULL},
++	{0, 64 * 1024, NULL},
++};
++
++int wcnss_prealloc_init(void)
++{
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(wcnss_allocs); i++) {
++		wcnss_allocs[i].occupied = 0;
++		wcnss_allocs[i].ptr = kmalloc(wcnss_allocs[i].size, GFP_KERNEL);
++		if (wcnss_allocs[i].ptr == NULL)
++			return -ENOMEM;
++	}
++
++	return 0;
++}
++
++void wcnss_prealloc_deinit(void)
++{
++	int i = 0;
++
++	for (i = 0; i < ARRAY_SIZE(wcnss_allocs); i++)
++		kfree(wcnss_allocs[i].ptr);
++}
++
++void *wcnss_prealloc_get(unsigned int size)
++{
++	int i = 0;
++
++	mutex_lock(&alloc_lock);
++	for (i = 0; i < ARRAY_SIZE(wcnss_allocs); i++) {
++		if (wcnss_allocs[i].occupied)
++			continue;
++
++		if (wcnss_allocs[i].size > size) {
++			/* we found the slot */
++			wcnss_allocs[i].occupied = 1;
++			mutex_unlock(&alloc_lock);
++			return wcnss_allocs[i].ptr;
++		}
++	}
++	pr_err("wcnss: %s: prealloc not available\n", __func__);
++	mutex_unlock(&alloc_lock);
++
++	return NULL;
++}
++EXPORT_SYMBOL(wcnss_prealloc_get);
++
++int wcnss_prealloc_put(void *ptr)
++{
++	int i = 0;
++
++	mutex_lock(&alloc_lock);
++	for (i = 0; i < ARRAY_SIZE(wcnss_allocs); i++) {
++		if (wcnss_allocs[i].ptr == ptr) {
++			wcnss_allocs[i].occupied = 0;
++			mutex_unlock(&alloc_lock);
++			return 1;
++		}
++	}
++	mutex_unlock(&alloc_lock);
++
++	return 0;
++}
++EXPORT_SYMBOL(wcnss_prealloc_put);
+diff --git a/drivers/net/wireless/wcnss/wcnss_prealloc.h b/drivers/net/wireless/wcnss/wcnss_prealloc.h
+new file mode 100644
+index 0000000..73ae6c6
+--- /dev/null
++++ b/drivers/net/wireless/wcnss/wcnss_prealloc.h
+@@ -0,0 +1,19 @@
++/* Copyright (c) 2012, The Linux Foundation. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 and
++ * only version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#ifndef _WCNSS_PRE_ALLOC_H_
++#define _WCNSS_PRE_ALLOC_H_
++
++int wcnss_prealloc_init(void);
++void wcnss_prealloc_deinit(void);
++
++#endif/* _WCNSS_PRE_ALLOC_H_ */
+diff --git a/drivers/net/wireless/wcnss/wcnss_wlan.c b/drivers/net/wireless/wcnss/wcnss_wlan.c
+index 5fa07a1..94decae 100644
+--- a/drivers/net/wireless/wcnss/wcnss_wlan.c
++++ b/drivers/net/wireless/wcnss/wcnss_wlan.c
+@@ -30,6 +30,9 @@
+ #include <mach/msm_iomap.h>
+ #include <linux/ratelimit.h>
+ #include <linux/mfd/pm8xxx/misc.h>
++#ifdef CONFIG_WCNSS_MEM_PRE_ALLOC
++#include "wcnss_prealloc.h"
++#endif
+ 
+ #define DEVICE "wcnss_wlan"
+ #define VERSION "1.01"
+@@ -1114,11 +1117,19 @@ static int wcnss_node_open(struct inode *inode, struct file *file)
+ 
+ static int __init wcnss_wlan_init(void)
+ {
++	int ret = 0;
++
+ 	platform_driver_register(&wcnss_wlan_driver);
+ 	platform_driver_register(&wcnss_wlan_ctrl_driver);
+ 	platform_driver_register(&wcnss_ctrl_driver);
+ 
+-	return 0;
++#ifdef CONFIG_WCNSS_MEM_PRE_ALLOC
++	ret = wcnss_prealloc_init();
++	if (ret < 0)
++		pr_err("wcnss: pre-allocation failed\n");
++#endif
++
++	return ret;
+ }
+ 
+ static void __exit wcnss_wlan_exit(void)
+@@ -1135,6 +1146,9 @@ static void __exit wcnss_wlan_exit(void)
+ 	platform_driver_unregister(&wcnss_ctrl_driver);
+ 	platform_driver_unregister(&wcnss_wlan_ctrl_driver);
+ 	platform_driver_unregister(&wcnss_wlan_driver);
++#ifdef CONFIG_WCNSS_MEM_PRE_ALLOC
++	wcnss_prealloc_deinit();
++#endif
+ }
+ 
+ module_init(wcnss_wlan_init);
+diff --git a/include/linux/wcnss_wlan.h b/include/linux/wcnss_wlan.h
+index be41fc1..29f700f 100644
+--- a/include/linux/wcnss_wlan.h
++++ b/include/linux/wcnss_wlan.h
+@@ -55,6 +55,8 @@ int wcnss_wlan_power(struct device *dev,
+ void wcnss_reset_intr(void);
+ int wcnss_cold_boot_done(void);
+ void wcnss_riva_dump_pmic_regs(void);
++void *wcnss_prealloc_get(unsigned int size);
++int wcnss_prealloc_put(void *ptr);
+ 
+ #define wcnss_wlan_get_drvdata(dev) dev_get_drvdata(dev)
+ #define wcnss_wlan_set_drvdata(dev, data) dev_set_drvdata((dev), (data))
+-- 
+1.8.1.6
+
