@@ -1,0 +1,23 @@
+#!/system/bin/sh
+#
+# Lioux
+# Thanks to Lisan Xda
+# Enable FQ Codel
+#
+
+# active fq_codel on the most used interfaces
+tc qdisc add dev p2p0 root fq_codel
+tc qdisc add dev rmnet0 root fq_codel
+tc qdisc add dev wlan0 root fq_codel
+
+# reduce txqueuelen to 0 until we have byte queue instead of a packet one
+echo 0 > /sys/class/net/p2p0/tx_queue_len
+echo 0 > /sys/class/net/rmnet0/tx_queue_len
+echo 0 > /sys/class/net/wlan0/tx_queue_len
+
+# suitable configuration to help reduce network latency
+echo 2 > /proc/sys/net/ipv4/tcp_ecn
+echo 1 > /proc/sys/net/ipv4/tcp_sack
+echo 1 > /proc/sys/net/ipv4/tcp_dsack
+echo 1 > /proc/sys/net/ipv4/tcp_low_latency
+echo 1 > /proc/sys/net/ipv4/tcp_timestamps
