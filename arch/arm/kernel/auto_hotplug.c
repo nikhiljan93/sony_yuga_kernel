@@ -90,7 +90,7 @@ struct work_struct hotplug_boost_online_work;
 static unsigned int history[SAMPLING_PERIODS];
 static unsigned int index;
 
-static int enabled = 1;
+static int enabled = 0;
 static unsigned int min_online_cpus = 2;
 static unsigned int max_online_cpus = 2;
 static unsigned int min_sampling_rate_ms = DEFAULT_SAMPLING_RATE;
