@@ -1676,7 +1676,7 @@ static const struct mmc_bus_ops mmc_ops = {
 	.resume = NULL,
 	.power_restore = mmc_power_restore,
 	.alive = mmc_alive,
-	//.poweroff_notify = mmc_poweroff_notify,
+	.poweroff_notify = (void *)mmc_poweroff_notify,
 	.change_bus_speed = mmc_change_bus_speed,
 };
 
@@ -1689,7 +1689,7 @@ static const struct mmc_bus_ops mmc_ops_unsafe = {
 	.resume = mmc_resume,
 	.power_restore = mmc_power_restore,
 	.alive = mmc_alive,
-	//.poweroff_notify = mmc_poweroff_notify,
+	.poweroff_notify = (void *)mmc_poweroff_notify,
 	.change_bus_speed = mmc_change_bus_speed,
 };
 

@@ -36,7 +36,7 @@
 #include <linux/highuid.h>
 
 #define INTELLIDEMAND_MAJOR_VERSION	4
-#define INTELLIDEMAND_MINOR_VERSION	2
+#define INTELLIDEMAND_MINOR_VERSION	4
 
 /*
  * dbs is used in this file as a shortform for demandbased switching
@@ -49,17 +49,17 @@
 #define BOOSTED_SAMPLING_DOWN_FACTOR		(10)
 #define MAX_SAMPLING_DOWN_FACTOR		(100000)
 #define MICRO_FREQUENCY_DOWN_DIFFERENTIAL	(3)
-#define MICRO_FREQUENCY_UP_THRESHOLD		(75)
+#define MICRO_FREQUENCY_UP_THRESHOLD		(95)
 #define MICRO_FREQUENCY_MIN_SAMPLE_RATE		(15000)
 #define MIN_FREQUENCY_UP_THRESHOLD		(11)
 #define MAX_FREQUENCY_UP_THRESHOLD		(100)
 #define MIN_FREQUENCY_DOWN_DIFFERENTIAL		(1)
-#define DEFAULT_FREQ_BOOST_TIME			(2500000)
+#define DEFAULT_FREQ_BOOST_TIME			(4000000)
 #define DEF_SAMPLING_RATE			(50000)
 #define BOOSTED_SAMPLING_RATE			(15000)
 #define DBS_INPUT_EVENT_MIN_FREQ		(1026000)
 #define DBS_SYNC_FREQ				(702000)
-#define DBS_OPTIMAL_FREQ			(1296000)
+#define DBS_OPTIMAL_FREQ			(1242000)
 
 #ifdef CONFIG_CPUFREQ_ID_PERFLOCK
 #define DBS_PERFLOCK_MIN_FREQ			(594000)
@@ -91,10 +91,10 @@ static unsigned long stored_sampling_rate;
 #define POWERSAVE_BIAS_MINLEVEL			(-1000)
 
 /* have the timer rate booted for this much time 2.5s*/
-#define TIMER_RATE_BOOST_TIME 2500000
+#define TIMER_RATE_BOOST_TIME 4000000
 static int sampling_rate_boosted;
 static u64 sampling_rate_boosted_time;
-static unsigned int current_sampling_rate;
+static unsigned int current_sampling_rate = DEF_SAMPLING_RATE;
 
 #ifdef CONFIG_CPUFREQ_ID_PERFLOCK
 static unsigned int saved_policy_min = 0;
@@ -180,17 +180,18 @@ static struct dbs_tuners {
 	unsigned int two_phase_freq;
 } dbs_tuners_ins = {
 	.up_threshold_multi_core = DEF_FREQUENCY_UP_THRESHOLD,
-	.up_threshold = DEF_FREQUENCY_UP_THRESHOLD,
+	.up_threshold = 95,
 	.sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR,
 	.down_differential = DEF_FREQUENCY_DOWN_DIFFERENTIAL,
 	.down_differential_multi_core = MICRO_FREQUENCY_DOWN_DIFFERENTIAL,
-	.up_threshold_any_cpu_load = DEF_FREQUENCY_UP_THRESHOLD,
+	.up_threshold_any_cpu_load = 85,
 	.ignore_nice = 0,
 	.powersave_bias = 0,
 	.sync_freq = DBS_SYNC_FREQ,
 	.optimal_freq = DBS_OPTIMAL_FREQ,
 	.freq_boost_time = DEFAULT_FREQ_BOOST_TIME,
-	.two_phase_freq = 0,
+	.boostfreq = 1350000,
+	.two_phase_freq = 1242000,
 };
 
 static inline cputime64_t get_cpu_idle_time_jiffy(unsigned int cpu,
@@ -1190,8 +1191,8 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 				(dbs_tuners_ins.up_threshold -
 				 dbs_tuners_ins.down_differential);
 
-		if (dbs_tuners_ins.boosted &&
-				freq_next < dbs_tuners_ins.boostfreq) {
+		if ((dbs_tuners_ins.boosted || mako_boosted)
+				&& freq_next < dbs_tuners_ins.boostfreq) {
 			freq_next = dbs_tuners_ins.boostfreq;
 		}
 
@@ -1209,9 +1210,10 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 				freq_next = dbs_tuners_ins.sync_freq;
 
 			if (max_load_freq >
-				 (dbs_tuners_ins.up_threshold_multi_core -
+				 ((dbs_tuners_ins.up_threshold_multi_core -
 				  dbs_tuners_ins.down_differential_multi_core) *
-				  policy->cur)
+				  policy->cur) &&
+				freq_next < dbs_tuners_ins.optimal_freq)
 				freq_next = dbs_tuners_ins.optimal_freq;
 
 		}
@@ -1715,6 +1717,7 @@ bail_acq_sema_failed:
 }
 
 static unsigned int enable_dbs_input_event = 1;
+
 static void dbs_input_event(struct input_handle *handle, unsigned int type,
 		unsigned int code, int value)
 {
@@ -1944,7 +1947,7 @@ static void cpufreq_intellidemand_late_resume(struct early_suspend *h)
 static struct early_suspend cpufreq_intellidemand_early_suspend_info = {
 	.suspend = cpufreq_intellidemand_early_suspend,
 	.resume = cpufreq_intellidemand_late_resume,
-	.level = EARLY_SUSPEND_LEVEL_DISABLE_FB+1,
+	.level = EARLY_SUSPEND_LEVEL_DISABLE_FB + 1,
 };
 #endif
 
