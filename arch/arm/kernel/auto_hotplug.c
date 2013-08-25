@@ -95,6 +95,7 @@ static unsigned int min_online_cpus = 2;
 static unsigned int max_online_cpus = 2;
 static unsigned int min_sampling_rate_ms = DEFAULT_SAMPLING_RATE;
 static unsigned int min_sampling_rate = 0;
+static int limit_online_cpu = 0;
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 static void auto_hotplug_early_suspend(struct early_suspend *handler)
@@ -106,6 +107,7 @@ static void auto_hotplug_early_suspend(struct early_suspend *handler)
 	cancel_delayed_work_sync(&hotplug_offline_work);
 	cancel_delayed_work_sync(&hotplug_decision_work);
 	if (num_online_cpus() > 1) {
+		limit_online_cpu = 0;
 		pr_info("auto_hotplug: Offlining CPUs for early suspend\n");
 		schedule_work_on(0, &hotplug_offline_all_work);
 	}
@@ -115,6 +117,8 @@ static void auto_hotplug_late_resume(struct early_suspend *handler)
 {
 	pr_info("auto_hotplug: late resume handler\n");
 	flags &= ~EARLYSUSPEND_ACTIVE;
+
+	limit_online_cpu = enabled;
 
 	schedule_work(&hotplug_online_all_work);
 }
@@ -362,8 +366,11 @@ static inline void __cpuinit hotplug_online_all_work_fn(struct work_struct *work
 	int max = enabled ? max_online_cpus : CPUS_AVAILABLE;
 
 	for_each_possible_cpu(cpu) {
-		if (likely(!cpu_online(cpu)) && num_online_cpus() < max) {
+		if (likely(!cpu_online(cpu)) && (!limit_online_cpu || num_online_cpus() < max)) {
 			cpu_up(cpu);
+#if DEBUG
+			pr_info("auto_hotplug: CPU%d is up\n", cpu);
+#endif
 		}
 	}
 
@@ -379,8 +386,11 @@ static inline void hotplug_offline_all_work_fn(struct work_struct *work)
 	int min = enabled ? min_online_cpus : 1;
 
 	for_each_possible_cpu(cpu) {
-		if (likely(cpu_online(cpu) && (cpu)) && num_online_cpus() > min) {
+		if (likely(cpu_online(cpu) && (cpu)) && (!limit_online_cpu || (num_online_cpus() > min))) {
 			cpu_down(cpu);
+#if DEBUG
+			pr_info("auto_hotplug: CPU%d is down\n", cpu);
+#endif
 		}
 	}
 }
