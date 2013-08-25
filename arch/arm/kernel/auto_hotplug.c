@@ -36,6 +36,8 @@
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
+#include <linux/cpufreq.h>
+#include <mach/cpufreq.h>
 #endif
 
 /*
@@ -98,8 +100,24 @@ static unsigned int min_sampling_rate = 0;
 static int limit_online_cpu = 0;
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
+#ifdef CONFIG_MSM_CPU_FREQ_SET_MIN_MAX
+static unsigned int cpufreq_save_min;
+static unsigned int cpufreq_save_max;
+#endif
 static void auto_hotplug_early_suspend(struct early_suspend *handler)
 {
+#ifdef CONFIG_MSM_CPU_FREQ_SET_MIN_MAX
+	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
+
+	cpufreq_save_min = policy->cpuinfo.min_freq;
+	cpufreq_save_max = policy->cpuinfo.max_freq;
+
+	msm_cpufreq_set_freq_limits(policy->cpu, CONFIG_MSM_CPU_FREQ_SUSPEND_MIN, CONFIG_MSM_CPU_FREQ_SUSPEND_MAX);
+#if DEBUG
+			pr_info("auto_hotplug: Suspend - limit CPU%d freq to %d - %d\n", policy->cpu, CONFIG_MSM_CPU_FREQ_SUSPEND_MIN, CONFIG_MSM_CPU_FREQ_SUSPEND_MAX);
+#endif
+#endif
+
 	pr_info("auto_hotplug: early suspend handler\n");
 	flags |= EARLYSUSPEND_ACTIVE;
 
@@ -115,6 +133,13 @@ static void auto_hotplug_early_suspend(struct early_suspend *handler)
 
 static void auto_hotplug_late_resume(struct early_suspend *handler)
 {
+#ifdef CONFIG_MSM_CPU_FREQ_SET_MIN_MAX
+	msm_cpufreq_set_freq_limits(0, cpufreq_save_min, cpufreq_save_max);
+#if DEBUG
+			pr_info("auto_hotplug: Resume - limit CPU%d freq to %d - %d\n", 0, cpufreq_save_min, cpufreq_save_max);
+#endif
+#endif
+
 	pr_info("auto_hotplug: late resume handler\n");
 	flags &= ~EARLYSUSPEND_ACTIVE;
 
