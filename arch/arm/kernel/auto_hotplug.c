@@ -185,6 +185,9 @@ static int set_enabled(const char *arg, const struct kernel_param *kp)
 
     hotplug_disable(!enabled);
 
+    if(!enabled)
+    	schedule_work(&hotplug_online_all_work);
+
     return ret;
 }
 
