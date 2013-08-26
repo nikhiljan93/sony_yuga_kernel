@@ -1,6 +1,6 @@
 /* drivers/tty/smux_loopback.h
  *
- * Copyright (c) 2012, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012, Code Aurora Forum. All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -36,4 +36,3 @@ static inline int smux_tx_loopback(struct smux_pkt_t *pkt_ptr)
 
 #endif /* CONFIG_N_SMUX_LOOPBACK */
 #endif /* SMUX_LOOPBACK_H */
-
