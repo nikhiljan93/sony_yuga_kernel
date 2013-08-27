@@ -98,6 +98,7 @@ static unsigned int min_online_cpus = 2;
 static unsigned int max_online_cpus = 2;
 static unsigned int min_sampling_rate_ms = DEFAULT_SAMPLING_RATE;
 static unsigned int min_sampling_rate = 0;
+static unsigned int fix_sampling_rate_ms = 0;
 static int enabled_save = 0;
 
 void hotplug_disable(bool flag);
@@ -240,6 +241,18 @@ static int min_sampling_rate_ms_set(const char *arg, const struct kernel_param *
     return ret;
 }
 
+static int fix_sampling_rate_ms_set(const char *arg, const struct kernel_param *kp)
+{
+    int ret;
+
+    ret = param_set_uint(arg, kp);
+
+    if (fix_sampling_rate_ms)
+    	min_sampling_rate = msecs_to_jiffies(fix_sampling_rate_ms);
+
+    return ret;
+}
+
 static struct kernel_param_ops enabled_ops =
 {
     .set = set_enabled,
@@ -264,6 +277,12 @@ static struct kernel_param_ops min_sampling_rate_ms_ops =
     .get = param_get_uint,
 };
 
+static struct kernel_param_ops fix_sampling_rate_ms_ops =
+{
+    .set = fix_sampling_rate_ms_set,
+    .get = param_get_uint,
+};
+
 module_param_cb(enabled, &enabled_ops, &enabled, 0644);
 MODULE_PARM_DESC(enabled, "control auto_hotplug");
 
@@ -272,6 +291,8 @@ module_param_cb(min_online_cpus, &min_online_cpus_ops, &min_online_cpus, 0644);
 module_param_cb(max_online_cpus, &max_online_cpus_ops, &max_online_cpus, 0644);
 
 module_param_cb(min_sampling_rate_ms, &min_sampling_rate_ms_ops, &min_sampling_rate_ms, 0644);
+
+module_param_cb(fix_sampling_rate_ms, &fix_sampling_rate_ms_ops, &fix_sampling_rate_ms, 0644);
 
 static inline void hotplug_decision_work_fn(struct work_struct *work)
 {
@@ -388,7 +409,11 @@ static inline void hotplug_decision_work_fn(struct work_struct *work)
 	/*
 	 * Reduce the sampling rate dynamically based on online cpus.
 	 */
-	sampling_rate = min_sampling_rate * (online_cpus * online_cpus);
+	if(!fix_sampling_rate_ms)
+		sampling_rate = min_sampling_rate * (online_cpus * online_cpus);
+	else
+		sampling_rate = min_sampling_rate;
+
 #if DEBUG
 	pr_info("auto_hotplug: sampling_rate is: %d\n", jiffies_to_msecs(sampling_rate));
 #endif
