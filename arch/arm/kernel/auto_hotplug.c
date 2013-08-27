@@ -186,6 +186,10 @@ static int set_enabled(const char *arg, const struct kernel_param *kp)
 
     ret = param_set_bool(arg, kp);
 
+#if DEBUG
+	pr_info("auto_hotplug: enabled is: %d\n", enabled);
+#endif
+
     hotplug_disable(!enabled);
 
     if(!enabled)
@@ -206,6 +210,10 @@ static int min_online_cpus_set(const char *arg, const struct kernel_param *kp)
     else if(min_online_cpus > max_online_cpus)
     	min_online_cpus = min_online_cpus;
 
+#if DEBUG
+	pr_info("auto_hotplug: min_online_cpus is: %d\n", min_online_cpus);
+#endif
+
     //online all cores and offline them based on set value
     schedule_work(&hotplug_online_all_work);
 
@@ -224,6 +232,10 @@ static int max_online_cpus_set(const char *arg, const struct kernel_param *kp)
     else if(max_online_cpus > CPUS_AVAILABLE)
     	max_online_cpus = CPUS_AVAILABLE;
 
+#if DEBUG
+	pr_info("auto_hotplug: max_online_cpus is: %d\n", max_online_cpus);
+#endif
+
     return ret;
 }
 
@@ -238,6 +250,10 @@ static int min_sampling_rate_ms_set(const char *arg, const struct kernel_param *
 
     min_sampling_rate = msecs_to_jiffies(min_sampling_rate_ms);
 
+#if DEBUG
+	pr_info("auto_hotplug: min_sampling_rate_ms is: %d\n", min_sampling_rate_ms);
+#endif
+
     return ret;
 }
 
@@ -249,6 +265,12 @@ static int fix_sampling_rate_ms_set(const char *arg, const struct kernel_param *
 
     if (fix_sampling_rate_ms)
     	min_sampling_rate = msecs_to_jiffies(fix_sampling_rate_ms);
+    else
+        min_sampling_rate = msecs_to_jiffies(min_sampling_rate_ms);
+
+#if DEBUG
+	pr_info("auto_hotplug: fix_sampling_rate_ms is: %d\n", fix_sampling_rate_ms);
+#endif
 
     return ret;
 }
@@ -568,6 +590,12 @@ int __init auto_hotplug_init(void)
 {
 	pr_info("auto_hotplug: v0.220 by _thalamus\n");
 	pr_info("auto_hotplug: %d CPUs detected\n", CPUS_AVAILABLE);
+
+	// Initial parameters value
+    if (fix_sampling_rate_ms)
+    	min_sampling_rate = msecs_to_jiffies(fix_sampling_rate_ms);
+    else
+        min_sampling_rate = msecs_to_jiffies(min_sampling_rate_ms);
 
     // max_online_cpus = num_possible_cpus();
 
