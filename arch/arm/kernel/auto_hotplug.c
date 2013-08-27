@@ -55,8 +55,9 @@
  * SAMPLING_PERIODS * MIN_SAMPLING_RATE is the minimum
  * load history which will be averaged
  */
-#define SAMPLING_PERIODS	10
+#define SAMPLING_PERIODS	8
 #define INDEX_MAX_VALUE		(SAMPLING_PERIODS - 1)
+#define AVG_NR(nr)			(nr >> 3)
 /*
  * MIN_SAMPLING_RATE is scaled based on num_online_cpus()
  */
@@ -70,9 +71,9 @@
  * DISABLE is the load at which a CPU is disabled
  * These two are scaled based on num_online_cpus()
  */
-#define ENABLE_ALL_LOAD_THRESHOLD	(100 * CPUS_AVAILABLE)
-#define ENABLE_LOAD_THRESHOLD		300
-#define DISABLE_LOAD_THRESHOLD		60
+#define ENABLE_ALL_LOAD_THRESHOLD	(120 * CPUS_AVAILABLE)
+#define ENABLE_LOAD_THRESHOLD		160
+#define DISABLE_LOAD_THRESHOLD		95
 
 /* Control flags */
 unsigned char flags;
@@ -168,7 +169,8 @@ static void auto_hotplug_late_resume(struct early_suspend *handler)
 #endif
 	flags &= ~EARLYSUSPEND_ACTIVE;
 
-	schedule_work(&hotplug_online_all_work);
+	if(!enabled)
+		schedule_work(&hotplug_online_all_work);
 }
 
 static struct early_suspend auto_hotplug_suspend = {
@@ -271,7 +273,7 @@ module_param_cb(max_online_cpus, &max_online_cpus_ops, &max_online_cpus, 0644);
 
 module_param_cb(min_sampling_rate_ms, &min_sampling_rate_ms_ops, &min_sampling_rate_ms, 0644);
 
-static void hotplug_decision_work_fn(struct work_struct *work)
+static inline void hotplug_decision_work_fn(struct work_struct *work)
 {
 	unsigned int running, disable_load, sampling_rate, enable_load, avg_running = 0;
 	unsigned int online_cpus, available_cpus, i, j;
@@ -295,11 +297,11 @@ static void hotplug_decision_work_fn(struct work_struct *work)
 	history[index] = running;
 
 #if DEBUG
-	pr_info("online_cpus is: %d\n", online_cpus);
-	pr_info("enable_load is: %d\n", enable_load);
-	pr_info("disable_load is: %d\n", disable_load);
-	pr_info("index is: %d\n", index);
-	pr_info("running is: %d\n", running);
+	pr_info("auto_hotplug: online_cpus is: %d\n", online_cpus);
+	pr_info("auto_hotplug: enable_load is: %d\n", enable_load);
+	pr_info("auto_hotplug: disable_load is: %d\n", disable_load);
+	pr_info("auto_hotplug: index is: %d\n", index);
+	pr_info("auto_hotplug: running is: %d\n", running);
 #endif
 
 	/*
@@ -322,18 +324,18 @@ static void hotplug_decision_work_fn(struct work_struct *work)
 		index = 0;
 
 #if DEBUG
-	pr_info("array contents: ");
+	pr_info("auto_hotplug: array contents: ");
 	for (k = 0; k < SAMPLING_PERIODS; k++) {
 		 pr_info("%d: %d\t",k, history[k]);
 	}
 	pr_info("\n");
-	pr_info("avg_running before division: %d\n", avg_running);
+	pr_info("auto_hotplug: avg_running before division: %d\n", avg_running);
 #endif
 
-	avg_running = avg_running / SAMPLING_PERIODS;
+	avg_running = AVG_NR(avg_running);
 
 #if DEBUG
-	pr_info("average_running is: %d\n", avg_running);
+	pr_info("auto_hotplug: average_running is: %d\n", avg_running);
 #endif
 
 	if (likely(!(flags & HOTPLUG_DISABLED))) {
@@ -388,7 +390,7 @@ static void hotplug_decision_work_fn(struct work_struct *work)
 	 */
 	sampling_rate = min_sampling_rate * (online_cpus * online_cpus);
 #if DEBUG
-	pr_info("sampling_rate is: %d\n", jiffies_to_msecs(sampling_rate));
+	pr_info("auto_hotplug: sampling_rate is: %d\n", jiffies_to_msecs(sampling_rate));
 #endif
 	schedule_delayed_work_on(0, &hotplug_decision_work, sampling_rate);
 
