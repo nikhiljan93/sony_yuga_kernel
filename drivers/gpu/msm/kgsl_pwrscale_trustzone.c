@@ -137,15 +137,18 @@ static struct attribute_group tz_attr_group = {
 static void tz_wake(struct kgsl_device *device, struct kgsl_pwrscale *pwrscale)
 {
 	struct tz_priv *priv = pwrscale->priv;
-	if (device->state != KGSL_STATE_NAP &&
+	if (device->state != KGSL_STATE_NAP){
 #ifdef CONFIG_MSM_KGSL_SIMPLE_GOV
-		(priv->governor == TZ_GOVERNOR_ONDEMAND ||
-		 priv->governor == TZ_GOVERNOR_SIMPLE))
+		if(priv->governor == TZ_GOVERNOR_ONDEMAND ||
+		 priv->governor == TZ_GOVERNOR_SIMPLE)
 #else
-		priv->governor == TZ_GOVERNOR_ONDEMAND)
+		if(priv->governor == TZ_GOVERNOR_ONDEMAND)
 #endif
 		kgsl_pwrctrl_pwrlevel_change(device,
 					device->pwrctrl.default_pwrlevel);
+		else if(priv->governor == TZ_GOVERNOR_PERFORMANCE)
+			kgsl_pwrctrl_pwrlevel_change(device, device->pwrctrl.max_pwrlevel);
+	}
 }
 
 #ifdef CONFIG_MSM_KGSL_SIMPLE_GOV
@@ -201,7 +204,9 @@ static void tz_idle(struct kgsl_device *device, struct kgsl_pwrscale *pwrscale)
 	/* In "performance" mode the clock speed always stays
 	   the same */
 	if (priv->governor == TZ_GOVERNOR_PERFORMANCE)
+	{
 		return;
+	}
 
 	device->ftbl->power_stats(device, &stats);
 	priv->bin.total_time += stats.total_time;
