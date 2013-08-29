@@ -269,6 +269,13 @@ static void tz_sleep(struct kgsl_device *device,
 	struct tz_priv *priv = pwrscale->priv;
 
 	__secure_tz_entry(TZ_RESET_ID, 0, device->id);
+#ifdef CONFIG_GPU_OVERCLOCK
+	kgsl_pwrctrl_pwrlevel_change(device, 4);
+	kgsl_pwrctrl_pwrlevel_change(device, KGSL_MAX_PWRLEVELS - 2);
+#else
+	kgsl_pwrctrl_pwrlevel_change(device, 3);
+	kgsl_pwrctrl_pwrlevel_change(device, KGSL_MAX_PWRLEVELS - 2);
+#endif
 	priv->no_switch_cnt = 0;
 	priv->bin.total_time = 0;
 	priv->bin.busy_time = 0;
