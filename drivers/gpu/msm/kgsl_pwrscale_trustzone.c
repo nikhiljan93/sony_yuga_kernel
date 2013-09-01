@@ -146,8 +146,8 @@ static void tz_wake(struct kgsl_device *device, struct kgsl_pwrscale *pwrscale)
 #endif
 		kgsl_pwrctrl_pwrlevel_change(device,
 					device->pwrctrl.default_pwrlevel);
-		else if(priv->governor == TZ_GOVERNOR_PERFORMANCE)
-			kgsl_pwrctrl_pwrlevel_change(device, device->pwrctrl.max_pwrlevel);
+		//else if(priv->governor == TZ_GOVERNOR_PERFORMANCE)
+		//	kgsl_pwrctrl_pwrlevel_change(device, device->pwrctrl.max_pwrlevel);
 	}
 }
 
@@ -276,10 +276,12 @@ static void tz_sleep(struct kgsl_device *device,
 	__secure_tz_entry(TZ_RESET_ID, 0, device->id);
 #ifdef CONFIG_GPU_OVERCLOCK
 	kgsl_pwrctrl_pwrlevel_change(device, 4);
-	kgsl_pwrctrl_pwrlevel_change(device, KGSL_MAX_PWRLEVELS - 2);
+	if (priv->governor != TZ_GOVERNOR_PERFORMANCE)
+		kgsl_pwrctrl_pwrlevel_change(device, KGSL_MAX_PWRLEVELS - 2);
 #else
 	kgsl_pwrctrl_pwrlevel_change(device, 3);
-	kgsl_pwrctrl_pwrlevel_change(device, KGSL_MAX_PWRLEVELS - 2);
+	if (priv->governor != TZ_GOVERNOR_PERFORMANCE)
+		kgsl_pwrctrl_pwrlevel_change(device, KGSL_MAX_PWRLEVELS - 2);
 #endif
 	priv->no_switch_cnt = 0;
 	priv->bin.total_time = 0;
