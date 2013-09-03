@@ -1069,10 +1069,6 @@ static int cpufreq_add_dev(struct device *dev, struct subsys_interface *sif)
 		struct cpufreq_policy *cp = per_cpu(cpufreq_cpu_data, sibling);
 		if (cp && cp->governor) {
 			policy->governor = cp->governor;
-			policy->min = cp->min;
-			policy->max = cp->max;
-			policy->user_policy.min = cp->user_policy.min;
-			policy->user_policy.max = cp->user_policy.max;
 			found = 1;
 			//pr_info("sibling: found sibling!\n");
 			break;
@@ -1089,6 +1085,17 @@ static int cpufreq_add_dev(struct device *dev, struct subsys_interface *sif)
 		pr_debug("initialization failed\n");
 		goto err_unlock_policy;
 	}
+#ifdef CONFIG_HOTPLUG_CPU
+	for_each_online_cpu(sibling) {
+		struct cpufreq_policy *cp = per_cpu(cpufreq_cpu_data, sibling);
+		if (cp && cp->governor &&
+		    (cpumask_test_cpu(cpu, cp->related_cpus))) {
+			policy->min = cp->min;
+			policy->max = cp->max;
+			break;
+		}
+	}
+#endif
 	policy->user_policy.min = policy->min;
 	policy->user_policy.max = policy->max;
 
@@ -2229,6 +2236,12 @@ int cpufreq_unregister_driver(struct cpufreq_driver *driver)
 }
 EXPORT_SYMBOL_GPL(cpufreq_unregister_driver);
 
+static int cpufreq_scaling_disabled;
+
+module_param(cpufreq_scaling_disabled, uint, 0644);
+MODULE_PARM_DESC(debug, "CPUfreq: "
+	"disable frequency range regulation based on screen on/off events");
+
 static unsigned int
 evaluate_cpu_freq(struct cpufreq_policy *policy, unsigned int base)
 {
@@ -2248,6 +2261,8 @@ static void powersave_early_suspend(struct early_suspend *handler)
 {
 	int cpu;
 
+	if (cpufreq_scaling_disabled)
+		return;
 	for_each_online_cpu(cpu) {
 		struct cpufreq_policy *cpu_policy, new_policy;
 
@@ -2274,6 +2289,8 @@ static void powersave_late_resume(struct early_suspend *handler)
 {
 	int cpu;
 
+	if (cpufreq_scaling_disabled)
+		return;
 	for_each_online_cpu(cpu) {
 		struct cpufreq_policy *cpu_policy, new_policy;
 
@@ -2282,9 +2299,8 @@ static void powersave_late_resume(struct early_suspend *handler)
 			continue;
 		if (cpufreq_get_policy(&new_policy, cpu))
 			goto out;
-		new_policy.max = cpu_policy->cpuinfo.max_freq;
-		new_policy.min = evaluate_cpu_freq(cpu_policy,
-					cpu_policy->cpuinfo.max_freq >> 1);
+		new_policy.max = cpu_policy->user_policy.max;
+		new_policy.min = cpu_policy->user_policy.min;
 		printk(KERN_INFO
 			"%s: set cpu%d freq in the %u-%u KHz range\n",
 			__func__, cpu, new_policy.min, new_policy.max);
@@ -2299,7 +2315,7 @@ out:
 static struct early_suspend _powersave_early_suspend = {
 	.suspend = powersave_early_suspend,
 	.resume = powersave_late_resume,
-	.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN,
+	.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1,
 };
 
 static int __init cpufreq_core_init(void)
