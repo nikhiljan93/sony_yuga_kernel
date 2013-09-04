@@ -47,7 +47,6 @@
 
 #define SECCLKAGD		BIT(4)
 
-<<<<<<< HEAD
 #ifdef CONFIG_LOW_CPUCLOCKS
 #define FREQ_TABLE_SIZE		39
 #else
