@@ -2025,7 +2025,7 @@ static int lp855x_setup(struct device *dev)
 		rc = -ENODEV;
 		goto err_no_vreg;
 	}
-	rc = regulator_set_voltage(lp855x_vddio_vreg, 1800000, 1800000);
+	rc = regulator_set_voltage(lp855x_vddio_vreg, 1700000, 1700000);
 	if (rc) {
 		dev_err(dev, "failed to set voltage '%s'\n", LP855X_IO_VREG_ID);
 		goto err_set_volt;
@@ -2036,7 +2036,7 @@ static int lp855x_setup(struct device *dev)
 		rc = -ENODEV;
 		goto err_no_als_vreg;
 	}
-	rc = regulator_set_voltage(lp855x_als_vreg, 2850000, 2850000);
+	rc = regulator_set_voltage(lp855x_als_vreg, 2800000, 2800000);
 	if (rc) {
 		dev_err(dev, "failed to set voltage '%s'\n",
 				LP855X_ALS_VREG_ID);
