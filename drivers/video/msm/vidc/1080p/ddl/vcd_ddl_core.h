@@ -45,7 +45,7 @@
 #define DDL_MAX_FRAME_RATE               120
 #define DDL_INITIAL_FRAME_RATE            30
 
-#define DDL_MAX_BIT_RATE    (20*1024*1024)
+#define DDL_MAX_BIT_RATE    (100000000)
 #define DDL_MAX_MB_PER_SEC  (DDL_MAX_MB_PER_FRAME * DDL_INITIAL_FRAME_RATE)
 
 #define DDL_SW_RESET_SLEEP               1
