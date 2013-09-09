@@ -266,7 +266,7 @@ static void cpufreq_ondemandplus_timer(unsigned long data)
 		/* Check for frequency increase */
 		if (load_freq > up_threshold * pcpu->target_freq) {
 			/* if we are already at full speed then break out early */
-			if (allowed_max < suspend_frequency) {
+			if (pcpu->target_freq < suspend_frequency) {
 				
 				new_freq = pcpu->target_freq + pcpu->policy->max / 10;
 
