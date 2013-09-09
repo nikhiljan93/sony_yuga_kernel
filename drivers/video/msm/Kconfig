@@ -1080,6 +1080,12 @@ config FB_MSM_EBI2_PANEL_DETECT
 	---help---
 	  Support for EBI2 panel auto detect
 
+config GAMMA_TWEAK
+	bool "Enable panel gamma tweak"
+	default y
+	---help---
+	  Support for hard-coded gamma tweak
+
 if FB_MSM_MDSS
 	source "drivers/video/msm/mdss/Kconfig"
 endif
