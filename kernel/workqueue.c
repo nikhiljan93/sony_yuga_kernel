@@ -1752,12 +1752,19 @@ static void cwq_activate_delayed_work(struct work_struct *work)
 	cwq->nr_active++;
 }
 
-static void cwq_activate_first_delayed(struct cpu_workqueue_struct *cwq)
+static void cwq_activate_delayed_work(struct work_struct *work)
 {
-	struct work_struct *work = list_first_entry(&cwq->delayed_works,
-						    struct work_struct, entry);
+	struct cpu_workqueue_struct *cwq = get_work_cwq(work);
 
 	cwq_activate_delayed_work(work);
+}
+
+static void cwq_activate_first_delayed(struct cpu_workqueue_struct *cwq)
+{
+  struct work_struct *work = list_first_entry(&cwq->delayed_works,
+                struct work_struct, entry);
+
+  cwq_activate_delayed_work(work);
 }
 
 /**
