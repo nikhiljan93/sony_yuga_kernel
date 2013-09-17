@@ -214,7 +214,6 @@ static void wdog_disable_work(struct work_struct *work)
 	atomic_notifier_chain_unregister(&panic_notifier_list, &panic_blk);
 	del_timer(&wdog_timer);
 	unregister_reboot_notifier(&msm_reboot_notifier);
-	cancel_delayed_work(&dogwork_struct);
 	/* may be suspended after the first write above */
 	__raw_writel(0, msm_wdt_base + WDT_EN);
 	complete(&work_data->complete);
