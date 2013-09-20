@@ -25,7 +25,7 @@
 #include <linux/mfd/pm8xxx/core.h>
 #include <linux/input/pmic8xxx-pwrkey.h>
 
-#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
+#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_DT2WAKE
 #include <linux/synaptics_i2c_rmi.h>
 #endif
 
@@ -223,7 +223,7 @@ static int __devinit pmic8xxx_pwrkey_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, pwrkey);
 
-	#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
+	#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_DT2WAKE
   	sweep2wake_setdev(pwr);
   	printk(KERN_INFO "[sweep2wake]: set device %s\n", pwr->name);
 	#endif

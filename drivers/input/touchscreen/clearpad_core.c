@@ -136,7 +136,7 @@ do {					\
 	mutex_unlock(&this->lock);	\
 } while (0)
 
-#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
+#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_DT2WAKE
 int cancel_pwrtrigger = 0;
 int dt2w_switch = 1;
 cputime64_t pwrtrigger_time[2] = {0, 0};
@@ -153,8 +153,8 @@ EXPORT_SYMBOL(sweep2wake_setdev);
 
 static void sweep2wake_presspwr(struct work_struct * sweep2wake_presspwr_work) {
 
-  //if (!mutex_trylock(&pwrkeyworklock))
-                  //return;
+  if (!mutex_trylock(&pwrkeyworklock))
+                  return;
     input_event(sweep2wake_pwrdev, EV_KEY, KEY_POWER, 1);
     input_event(sweep2wake_pwrdev, EV_SYN, 0, 0);
     msleep(100);
@@ -1876,8 +1876,7 @@ exit:
 	return rc;
 }
 
-#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
-
+#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_DT2WAKE
 static void dt2w_func() {
 
       printk("[DT2W]: OFF->ON\n");
@@ -1912,7 +1911,7 @@ static int synaptics_clearpad_handle_gesture(struct synaptics_clearpad *this)
 		rc = evgen_execute(this->input, this->evgen_blocks,
 					"double_tap");
 		
-		#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
+		#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_DT2WAKE
 		if(dt2w_switch == 1)
    		dt2w_func();
 		#endif 
@@ -2627,7 +2626,7 @@ static int create_sysfs_entries(struct synaptics_clearpad *this)
 		}
 	}
 
-	#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
+	#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_DT2WAKE
   	lge_touch_sysfs_init();
 	#endif
 	return rc;
@@ -2639,7 +2638,7 @@ static void remove_sysfs_entries(struct synaptics_clearpad *this)
 
 	for (i = 0; i < ARRAY_SIZE(clearpad_sysfs_attrs); i++)
 		device_remove_file(&this->input->dev, &clearpad_sysfs_attrs[i]);
-	#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
+	#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_DT2WAKE
   	lge_touch_sysfs_deinit();
 	#endif
 }

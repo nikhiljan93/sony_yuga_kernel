@@ -986,8 +986,8 @@ config TOUCH_REG_MAP_TM2000
 	help
 	  Synaptics Register map TM2000.
 
-config TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
-        tristate "Sweep2Wake for SYNAPTICS_3k based touchscreens"
+config TOUCHSCREEN_SYNAPTICS_DT2WAKE
+        tristate "DoubleTap2Wake for SYNAPTICS_CLEARPAD based touchscreens"
         default y
 
 
