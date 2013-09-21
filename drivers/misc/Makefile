@@ -77,6 +77,7 @@ obj-y += tspdrv/
 obj-$(CONFIG_BU52031NVX) += pm8xxx-cradle.o
 obj-$(CONFIG_SLIMPORT_ANX7808)	+= slimport_anx7808/
 obj-$(CONFIG_AS3649_FLASHLED)	+= as3649.o
+obj-$(CONFIG_GAMMA_CONTROL) += gamma_control.o
 obj-$(CONFIG_RAMDUMP_TAGS) += rdtags.o
 obj-$(CONFIG_NFC_PN544)		+= pn544.o
 obj-$(CONFIG_LM3560)		+= lm3560.o
