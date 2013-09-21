@@ -1921,7 +1921,7 @@ static int synaptics_clearpad_handle_gesture(struct synaptics_clearpad *this)
 {
 	u8 wakeint;
 	int rc;
-
+	
 	rc = synaptics_read(this, SYNF(F11_2D, DATA,
 			this->easy_wakeup_config.large_panel ? 0x39 : 0x43),
 			&wakeint, 1);
@@ -1938,22 +1938,22 @@ static int synaptics_clearpad_handle_gesture(struct synaptics_clearpad *this)
 
 	switch (wakeint) {
 	case XY_LPWG_STATUS_DOUBLE_TAP_DETECTED:
-		rc = evgen_execute(this->input, this->evgen_blocks,
-					"double_tap");
+		//rc = evgen_execute(this->input, this->evgen_blocks,
+		//			"double_tap");
 		
 		#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_DT2WAKE
-		if(dt2w_switch == 1 && screen_sus==0)
+		if(dt2w_switch == 1 && screen_sus==1)
    		dt2w_func();
 		#endif 
 
 		break;
 	case XY_LPWG_STATUS_SWIPE_DETECTED:
-		rc = evgen_execute(this->input, this->evgen_blocks,
-					"single_swipe");
+		//rc = evgen_execute(this->input, this->evgen_blocks,
+		//			"single_swipe");
 		break;
 	case XY_LPWG_STATUS_TWO_SWIPE_DETECTED:
-		rc = evgen_execute(this->input, this->evgen_blocks,
-					"two_swipe");
+		//rc = evgen_execute(this->input, this->evgen_blocks,
+		//			"two_swipe");
 		#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
 		if(s2w_switch == 1)
    		dt2w_func();
@@ -2873,7 +2873,7 @@ static void synaptics_clearpad_early_suspend(struct early_suspend *handler)
 	
 	#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
 	printk("\n [S2W]: Screen suspended\n");        
-	screen_sus = 0;
+	screen_sus = 1;
 	#endif
 
 
@@ -2888,7 +2888,7 @@ static void synaptics_clearpad_late_resume(struct early_suspend *handler)
 
 	#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
 	printk("\n [S2W]: Screen not suspended\n");
-        screen_sus = 1;
+        screen_sus = 0;
 	#endif
 
 	dev_info(&this->pdev->dev, "late resume\n");
