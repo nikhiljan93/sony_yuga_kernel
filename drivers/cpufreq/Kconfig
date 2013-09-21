@@ -189,6 +189,11 @@ config CPU_FREQ_DEFAULT_GOV_SMARTASSH3
 	help
 	  Use the CPUFreq governor 'slp' as default.
 
+config CPU_FREQ_DEFAULT_GOV_SMARTMAX
+	bool "userspace"
+	select CPU_FREQ_GOV_SMARTMAX
+	help
+
 config CPU_FREQ_DEFAULT_GOV_USERSPACE
 	bool "userspace"
 	select CPU_FREQ_GOV_USERSPACE
@@ -250,6 +255,11 @@ config CPU_FREQ_GOV_ASSWAX
 	depends on CPU_FREQ
 	help
 	  Use as default governors
+
+config CPU_FREQ_GOV_SMARTMAX
+	tristate "'smartmax' cpufreq governor"
+	depends on CPU_FREQ
+	help
 
 config CPU_FREQ_GOV_BADASS
 	tristate "'badass' cpufreq policy governor"
