@@ -1,0 +1,442 @@
+From 8dc87a4b318ab284ac811636a226306a61bbb5ed Mon Sep 17 00:00:00 2001
+From: Giulio Cervera <giulio.cervera@cyanogenmod.org>
+Date: Thu, 19 Sep 2013 10:43:41 +0200
+Subject: [PATCH] Merge of Sony release 10.3.1.A.2.67
+
+Change-Id: I2b6fd5500665ef4c8b6a0aaef4a99375ca2e7872
+---
+ arch/arm/mach-msm/board-8064-pmic.c          |  3 ---
+ arch/arm/mach-msm/board-8930-pmic.c          |  3 ---
+ arch/arm/mach-msm/board-8960-pmic.c          |  3 ---
+ arch/arm/mach-msm/board-sony_dogo-pmic.c     |  3 ---
+ arch/arm/mach-msm/board-sony_odin-pmic.c     |  3 ---
+ arch/arm/mach-msm/board-sony_pollux-pmic.c   |  3 ---
+ arch/arm/mach-msm/board-sony_yuga-pmic.c     |  3 ---
+ drivers/input/touchscreen/clearpad_rmi_dev.c | 18 +++++++++++--
+ drivers/power/pm8921-bms.c                   | 39 +++++++---------------------
+ drivers/usb/gadget/composite.c               |  5 ++--
+ drivers/video/msm/hdmi_msm.c                 | 12 ++++-----
+ drivers/video/msm/mdp.c                      | 21 ++++++++-------
+ drivers/video/msm/mdp4_overlay_dsi_video.c   |  2 --
+ drivers/video/msm/mipi_dsi.c                 |  4 +--
+ include/linux/ion.h                          |  2 +-
+ include/linux/mfd/pm8xxx/pm8921-bms.h        | 11 --------
+ 16 files changed, 49 insertions(+), 86 deletions(-)
+
+diff --git a/arch/arm/mach-msm/board-8064-pmic.c b/arch/arm/mach-msm/board-8064-pmic.c
+index 2d06031..44d9413 100644
+--- a/arch/arm/mach-msm/board-8064-pmic.c
++++ b/arch/arm/mach-msm/board-8064-pmic.c
+@@ -448,9 +448,6 @@ void __init apq8064_pm8xxx_gpio_mpp_init(void)
+ 	.low_voltage_calc_ms		= 1000,
+ 	.alarm_low_mv			= 3400,
+ 	.alarm_high_mv			= 4000,
+-	.high_ocv_correction_limit_uv	= 50,
+-	.low_ocv_correction_limit_uv	= 100,
+-	.hold_soc_est			= 3,
+ };
+ 
+ static struct pm8921_platform_data
+diff --git a/arch/arm/mach-msm/board-8930-pmic.c b/arch/arm/mach-msm/board-8930-pmic.c
+index 06e4ce4..83cdbf4 100644
+--- a/arch/arm/mach-msm/board-8930-pmic.c
++++ b/arch/arm/mach-msm/board-8930-pmic.c
+@@ -484,9 +484,6 @@ void __init msm8930_pm8917_gpio_mpp_init(void)
+ 	.low_voltage_calc_ms		= 1000,
+ 	.alarm_low_mv			= 3400,
+ 	.alarm_high_mv			= 4000,
+-	.high_ocv_correction_limit_uv	= 50,
+-	.low_ocv_correction_limit_uv	= 100,
+-	.hold_soc_est			= 3,
+ };
+ 
+ static struct pm8038_platform_data pm8038_platform_data __devinitdata = {
+diff --git a/arch/arm/mach-msm/board-8960-pmic.c b/arch/arm/mach-msm/board-8960-pmic.c
+index 9aa530d..786ccf2 100644
+--- a/arch/arm/mach-msm/board-8960-pmic.c
++++ b/arch/arm/mach-msm/board-8960-pmic.c
+@@ -436,9 +436,6 @@ void __init msm8960_pm8921_gpio_mpp_init(void)
+ 	.low_voltage_calc_ms		= 1000,
+ 	.alarm_low_mv			= 3400,
+ 	.alarm_high_mv			= 4000,
+-	.high_ocv_correction_limit_uv	= 50,
+-	.low_ocv_correction_limit_uv	= 100,
+-	.hold_soc_est			= 3,
+ };
+ 
+ #define	PM8921_LC_LED_MAX_CURRENT	4	/* I = 4mA */
+diff --git a/arch/arm/mach-msm/board-sony_dogo-pmic.c b/arch/arm/mach-msm/board-sony_dogo-pmic.c
+index 2edd810..fc78b5a 100644
+--- a/arch/arm/mach-msm/board-sony_dogo-pmic.c
++++ b/arch/arm/mach-msm/board-sony_dogo-pmic.c
+@@ -486,9 +486,6 @@ void __init apq8064_pm8xxx_gpio_mpp_init(void)
+ #ifndef CONFIG_PM8921_SONY_BMS_CHARGER
+ 	.low_voltage_detect		= 1,
+ 	.vbatt_cutoff_retries		= 5,
+-	.high_ocv_correction_limit_uv	= 50,
+-	.low_ocv_correction_limit_uv	= 100,
+-	.hold_soc_est			= 3,
+ #endif
+ };
+ 
+diff --git a/arch/arm/mach-msm/board-sony_odin-pmic.c b/arch/arm/mach-msm/board-sony_odin-pmic.c
+index fa12512..7314ba4 100644
+--- a/arch/arm/mach-msm/board-sony_odin-pmic.c
++++ b/arch/arm/mach-msm/board-sony_odin-pmic.c
+@@ -528,9 +528,6 @@ void __init apq8064_pm8xxx_gpio_mpp_init(void)
+ 	.pon_ocv_dis_low_soc		= 25,
+ 	.low_voltage_detect		= 1,
+ 	.vbatt_cutoff_retries		= 5,
+-	.high_ocv_correction_limit_uv	= 50,
+-	.low_ocv_correction_limit_uv	= 100,
+-	.hold_soc_est			= 3,
+ #endif
+ };
+ 
+diff --git a/arch/arm/mach-msm/board-sony_pollux-pmic.c b/arch/arm/mach-msm/board-sony_pollux-pmic.c
+index 22e72e3..8bb6be6 100644
+--- a/arch/arm/mach-msm/board-sony_pollux-pmic.c
++++ b/arch/arm/mach-msm/board-sony_pollux-pmic.c
+@@ -493,9 +493,6 @@ void __init apq8064_pm8xxx_gpio_mpp_init(void)
+ 	.pon_ocv_dis_low_soc		= 25,
+ 	.low_voltage_detect		= 1,
+ 	.vbatt_cutoff_retries		= 5,
+-	.high_ocv_correction_limit_uv	= 50,
+-	.low_ocv_correction_limit_uv	= 100,
+-	.hold_soc_est			= 3,
+ #endif
+ };
+ 
+diff --git a/arch/arm/mach-msm/board-sony_yuga-pmic.c b/arch/arm/mach-msm/board-sony_yuga-pmic.c
+index ca0ed7e..d048c82 100644
+--- a/arch/arm/mach-msm/board-sony_yuga-pmic.c
++++ b/arch/arm/mach-msm/board-sony_yuga-pmic.c
+@@ -478,9 +478,6 @@ void __init apq8064_pm8xxx_gpio_mpp_init(void)
+ 	.pon_ocv_dis_low_soc		= 20,
+ 	.low_voltage_detect		= 1,
+ 	.vbatt_cutoff_retries		= 5,
+-	.high_ocv_correction_limit_uv	= 50,
+-	.low_ocv_correction_limit_uv	= 100,
+-	.hold_soc_est			= 3,
+ #endif
+ };
+ 
+diff --git a/drivers/input/touchscreen/clearpad_rmi_dev.c b/drivers/input/touchscreen/clearpad_rmi_dev.c
+index 70a423e..cf816b9 100644
+--- a/drivers/input/touchscreen/clearpad_rmi_dev.c
++++ b/drivers/input/touchscreen/clearpad_rmi_dev.c
+@@ -154,11 +154,18 @@ static ssize_t rmidev_read(struct file *filp, char __user *buf,
+ {
+ 	struct rmidev_data *data = filp->private_data;
+ 	ssize_t retval  = 0;
+-	unsigned char tmpbuf[count+1];
++	unsigned char tmpbuf[RMI_CHAR_DEV_TMPBUF_SZ];
++
++	if (*f_pos > REG_ADDR_LIMIT) {
++		retval = -EINVAL;
++		goto exit;
++	}
+ 
+ 	/* limit offset to REG_ADDR_LIMIT-1 */
+ 	if (count > (REG_ADDR_LIMIT - *f_pos))
+ 		count = REG_ADDR_LIMIT - *f_pos;
++	if (count > RMI_CHAR_DEV_TMPBUF_SZ)
++		count = RMI_CHAR_DEV_TMPBUF_SZ;
+ 
+ 	if (count == 0)
+ 		goto exit;
+@@ -204,11 +211,18 @@ static ssize_t rmidev_write(struct file *filp, const char __user *buf,
+ {
+ 	struct rmidev_data *data = filp->private_data;
+ 	ssize_t retval  = 0;
+-	unsigned char tmpbuf[count+1];
++	unsigned char tmpbuf[RMI_CHAR_DEV_TMPBUF_SZ];
++
++	if (*f_pos > REG_ADDR_LIMIT) {
++		retval = -EINVAL;
++		goto exit;
++	}
+ 
+ 	/* limit offset to REG_ADDR_LIMIT-1 */
+ 	if (count > (REG_ADDR_LIMIT - *f_pos))
+ 		count = REG_ADDR_LIMIT - *f_pos;
++	if (count > RMI_CHAR_DEV_TMPBUF_SZ)
++		count = RMI_CHAR_DEV_TMPBUF_SZ;
+ 
+ 	if (count == 0)
+ 		goto exit;
+diff --git a/drivers/power/pm8921-bms.c b/drivers/power/pm8921-bms.c
+index 7495439..9d84068 100644
+--- a/drivers/power/pm8921-bms.c
++++ b/drivers/power/pm8921-bms.c
+@@ -185,9 +185,6 @@ struct pm8921_bms_chip {
+ 	int			pon_disable_flat_portion_ocv;
+ 	int			pon_ocv_dis_high_soc;
+ 	int			pon_ocv_dis_low_soc;
+-	int			high_ocv_correction_limit_uv;
+-	int			low_ocv_correction_limit_uv;
+-	int			hold_soc_est;
+ 	int			prev_vbat_batt_terminal_uv;
+ 	int			vbatt_cutoff_count;
+ 	int			low_voltage_detect;
+@@ -1949,7 +1946,6 @@ static int adjust_soc(struct pm8921_bms_chip *chip, int soc,
+ 	int m = 0;
+ 	int rc = 0;
+ 	int delta_ocv_uv_limit = 0;
+-	int correction_limit_uv = 0;
+ 	bool below_cutoff = false;
+ 
+ 	rc = pm8921_bms_get_simultaneous_battery_voltage_and_current(
+@@ -1996,13 +1992,17 @@ static int adjust_soc(struct pm8921_bms_chip *chip, int soc,
+ 
+ 	/*
+ 	 * do not adjust
+-	 * if soc_est is same as what bms calculated
+-	 * OR if soc_est > 15
+-	 * OR if soc it is above 90 because we might pull it low
++	 * if soc is same as what bms calculated
++	 * if soc_est is between 45 and 25, this is the flat portion of the
++	 * curve where soc_est is not so accurate. We generally don't want to
++	 * adjust when soc_est is inaccurate except for the cases when soc is
++	 * way far off (higher than 50 or lesser than 20).
++	 * Also don't adjust soc if it is above 90 becuase we might pull it low
+ 	 * and  cause a bad user experience
+ 	 */
+ 	if (soc_est == soc
+-		|| soc_est > 15
++		|| (is_between(45, chip->adjust_soc_low_threshold, soc_est)
++		&& is_between(50, chip->adjust_soc_low_threshold - 5, soc))
+ 		|| soc >= 90)
+ 		goto out;
+ 
+@@ -2051,22 +2051,6 @@ static int adjust_soc(struct pm8921_bms_chip *chip, int soc,
+ 		pr_debug("new delta ocv = %d\n", delta_ocv_uv);
+ 	}
+ 
+-	if (chip->last_ocv_uv > 3800000)
+-		correction_limit_uv = the_chip->high_ocv_correction_limit_uv;
+-	else
+-		correction_limit_uv = the_chip->low_ocv_correction_limit_uv;
+-
+-	if (abs(delta_ocv_uv) > correction_limit_uv) {
+-		pr_debug("limiting delta ocv %d limit = %d\n", delta_ocv_uv,
+-				correction_limit_uv);
+-
+-		if (delta_ocv_uv > 0)
+-			delta_ocv_uv = correction_limit_uv;
+-		else
+-			delta_ocv_uv = -1 * correction_limit_uv;
+-		pr_debug("new delta ocv = %d\n", delta_ocv_uv);
+-	}
+-
+ 	chip->last_ocv_uv -= delta_ocv_uv;
+ 
+ 	if (chip->last_ocv_uv >= chip->max_voltage_uv)
+@@ -2084,7 +2068,7 @@ static int adjust_soc(struct pm8921_bms_chip *chip, int soc,
+ 	 * if soc_new is ZERO force it higher so that phone doesnt report soc=0
+ 	 * soc = 0 should happen only when soc_est == 0
+ 	 */
+-	if (soc_new == 0 && soc_est >= the_chip->hold_soc_est)
++	if (soc_new == 0 && soc_est != 0)
+ 		soc_new = 1;
+ 
+ 	soc = soc_new;
+@@ -3773,11 +3757,6 @@ static int __devinit pm8921_bms_probe(struct platform_device *pdev)
+ 	chip->pon_ocv_dis_high_soc = pdata->pon_ocv_dis_high_soc;
+ 	chip->pon_ocv_dis_low_soc = pdata->pon_ocv_dis_low_soc;
+ 
+-	chip->high_ocv_correction_limit_uv
+-					= pdata->high_ocv_correction_limit_uv;
+-	chip->low_ocv_correction_limit_uv = pdata->low_ocv_correction_limit_uv;
+-	chip->hold_soc_est = pdata->hold_soc_est;
+-
+ 	chip->alarm_low_mv = pdata->alarm_low_mv;
+ 	chip->alarm_high_mv = pdata->alarm_high_mv;
+ 	chip->low_voltage_detect = pdata->low_voltage_detect;
+diff --git a/drivers/usb/gadget/composite.c b/drivers/usb/gadget/composite.c
+index 2085bea..83cf4cd 100644
+--- a/drivers/usb/gadget/composite.c
++++ b/drivers/usb/gadget/composite.c
+@@ -2,7 +2,7 @@
+  * composite.c - infrastructure for Composite USB Gadgets
+  *
+  * Copyright (C) 2006-2008 David Brownell
+- * Copyright (C) 2012 Sony Mobile Communications AB.
++ * Copyright (C) 2012-2013 Sony Mobile Communications AB.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -820,7 +820,8 @@ int usb_remove_config(struct usb_composite_dev *cdev,
+ 	if (cdev->config == config)
+ 		reset_config(cdev);
+ 
+-	list_del(&config->list);
++	if (config->list.next != LIST_POISON1)
++		list_del(&config->list);
+ 
+ 	spin_unlock_irqrestore(&cdev->lock, flags);
+ 
+diff --git a/drivers/video/msm/hdmi_msm.c b/drivers/video/msm/hdmi_msm.c
+index 6cb888f..d61c6f3 100644
+--- a/drivers/video/msm/hdmi_msm.c
++++ b/drivers/video/msm/hdmi_msm.c
+@@ -3027,13 +3027,13 @@ static void hdmi_msm_hdcp_enable(void)
+ 	external_common_state->hdcp_active = TRUE;
+ 	mutex_unlock(&hdcp_auth_state_mutex);
+ 
+-	if (!hdmi_msm_is_dvi_mode()) {
+-		DEV_INFO("HDMI HPD: sense : send HDCP_PASS\n");
+-		envp[0] = "HDCP_STATE=PASS";
+-		envp[1] = NULL;
+-		kobject_uevent_env(external_common_state->uevent_kobj,
+-		    KOBJ_CHANGE, envp);
++	DEV_INFO("HDMI HPD: sense : send HDCP_PASS\n");
++	envp[0] = "HDCP_STATE=PASS";
++	envp[1] = NULL;
++	kobject_uevent_env(external_common_state->uevent_kobj,
++		KOBJ_CHANGE, envp);
+ 
++	if (!hdmi_msm_is_dvi_mode()) {
+ 		SWITCH_SET_HDMI_AUDIO(1, 0);
+ 	}
+ 
+diff --git a/drivers/video/msm/mdp.c b/drivers/video/msm/mdp.c
+index 49e0b67..bd170b2 100644
+--- a/drivers/video/msm/mdp.c
++++ b/drivers/video/msm/mdp.c
+@@ -4,6 +4,7 @@
+  *
+  * Copyright (c) 2007-2013, The Linux Foundation. All rights reserved.
+  * Copyright (C) 2007 Google Incorporated
++ * Copyright (C) 2012 Sony Mobile Communications AB.
+  *
+  * This software is licensed under the terms of the GNU General Public
+  * License version 2, as published by the Free Software Foundation, and
+@@ -2371,6 +2372,11 @@ static int mdp_off(struct platform_device *pdev)
+ 	struct msm_fb_data_type *mfd = platform_get_drvdata(pdev);
+ 
+ 	pr_debug("%s:+\n", __func__);
++
++	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
++	ret = panel_next_off(pdev);
++	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_OFF, FALSE);
++
+ 	mdp_histogram_ctrl_all(FALSE);
+ 	atomic_set(&vsync_cntrl.suspend, 1);
+ 	atomic_set(&vsync_cntrl.vsync_resume, 0);
+@@ -2391,10 +2397,6 @@ static int mdp_off(struct platform_device *pdev)
+ 	else if (mfd->panel.type == WRITEBACK_PANEL)
+ 		mdp4_overlay_writeback_off(pdev);
+ 
+-	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
+-	ret = panel_next_off(pdev);
+-	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_OFF, FALSE);
+-
+ 	mdp_clk_ctrl(0);
+ #ifdef CONFIG_MSM_BUS_SCALING
+ 	mdp_bus_scale_update_request(0, 0, 0, 0);
+@@ -2426,6 +2428,12 @@ static int mdp_on(struct platform_device *pdev)
+ 
+ 	pr_debug("%s:+\n", __func__);
+ 
++	mdp_clk_ctrl(1);
++	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
++	ret = panel_next_on(pdev);
++	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_OFF, FALSE);
++	mdp_clk_ctrl(0);
++
+ 	if (mdp_rev >= MDP_REV_40) {
+ 		mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
+ 		mdp_clk_ctrl(1);
+@@ -2462,11 +2470,6 @@ static int mdp_on(struct platform_device *pdev)
+ 		atomic_set(&vsync_cntrl.suspend, 1);
+ 	}
+ 
+-	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
+-
+-	ret = panel_next_on(pdev);
+-	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_OFF, FALSE);
+-
+ 	mdp_histogram_ctrl_all(TRUE);
+ 
+ 	if (ret == 0)
+diff --git a/drivers/video/msm/mdp4_overlay_dsi_video.c b/drivers/video/msm/mdp4_overlay_dsi_video.c
+index cb894e1..1d56582 100644
+--- a/drivers/video/msm/mdp4_overlay_dsi_video.c
++++ b/drivers/video/msm/mdp4_overlay_dsi_video.c
+@@ -766,8 +766,6 @@ int mdp4_dsi_video_off(struct platform_device *pdev)
+ 	vctrl = &vsync_ctrl_db[cndx];
+ 	pipe = vctrl->base_pipe;
+ 
+-	mdp4_dsi_video_wait4vsync(cndx);
+-
+ 	if (pipe->ov_blt_addr) {
+ 		spin_lock_irqsave(&vctrl->spin_lock, flags);
+ 		if (vctrl->ov_koff != vctrl->ov_done)
+diff --git a/drivers/video/msm/mipi_dsi.c b/drivers/video/msm/mipi_dsi.c
+index 4f6b79e..2a11321 100644
+--- a/drivers/video/msm/mipi_dsi.c
++++ b/drivers/video/msm/mipi_dsi.c
+@@ -100,6 +100,8 @@ static int mipi_dsi_off(struct platform_device *pdev)
+ 		mipi_dsi_cmd_mdp_busy();
+ 	}
+ 
++	ret = panel_next_off(pdev);
++
+ 	/*
+ 	 * Desctiption: change to DSI_CMD_MODE since it needed to
+ 	 * tx DCS dsiplay off comamnd to panel
+@@ -116,8 +118,6 @@ static int mipi_dsi_off(struct platform_device *pdev)
+ 		}
+ 	}
+ 
+-	ret = panel_next_off(pdev);
+-
+ 	spin_lock_bh(&dsi_clk_lock);
+ 
+ 	mipi_dsi_clk_disable();
+diff --git a/include/linux/ion.h b/include/linux/ion.h
+index 7fee5ff..e8c2f79 100644
+--- a/include/linux/ion.h
++++ b/include/linux/ion.h
+@@ -43,7 +43,7 @@ enum ion_heap_type {
+ 	ION_HEAP_TYPE_DMA,
+ 	ION_HEAP_TYPE_CUSTOM, /* must be last so device specific heaps always
+ 				 are at the end of this enum */
+-	ION_NUM_HEAPS,
++	ION_NUM_HEAPS = 16,
+ };
+ 
+ #define ION_HEAP_SYSTEM_MASK		(1 << ION_HEAP_TYPE_SYSTEM)
+diff --git a/include/linux/mfd/pm8xxx/pm8921-bms.h b/include/linux/mfd/pm8xxx/pm8921-bms.h
+index dc39e60..cd87412 100644
+--- a/include/linux/mfd/pm8xxx/pm8921-bms.h
++++ b/include/linux/mfd/pm8xxx/pm8921-bms.h
+@@ -51,14 +51,6 @@ struct pm8xxx_bms_core_data {
+  * @pon_ocv_dis_low_soc:	the lower power on ocv soc percent to disregard
+  * @low_voltage_detect:		feature to enable 0 SOC reporting on low voltage
+  * @vbatt_cutoff_retries:	number of tries before we report a 0 SOC
+- * @high_ocv_correction_limit_uv:	the max amount of OCV corrections
+- *					allowed when ocv is high
+- *					(higher than 3.8V)
+- * @low_ocv_correction_limit_uv:	the max amount of OCV corrections
+- *					allowed when ocv is low
+- *					(lower or equal to 3.8V)
+- * @hold_soc_est:		the min est soc below which the calculated soc
+- *				is allowed to go to 0%
+  */
+ struct pm8921_bms_platform_data {
+ 	struct pm8xxx_bms_core_data	bms_cdata;
+@@ -85,9 +77,6 @@ struct pm8921_bms_platform_data {
+ 	int				pon_ocv_dis_low_soc;
+ 	int				low_voltage_detect;
+ 	int				vbatt_cutoff_retries;
+-	int				high_ocv_correction_limit_uv;
+-	int				low_ocv_correction_limit_uv;
+-	int				hold_soc_est;
+ };
+ 
+ #if defined(CONFIG_PM8921_BMS) || defined(CONFIG_PM8921_BMS_MODULE)
+-- 
+1.8.4
+
