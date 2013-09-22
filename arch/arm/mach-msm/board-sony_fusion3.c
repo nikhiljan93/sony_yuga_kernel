@@ -165,11 +165,14 @@
 
 #define MSM_PMEM_ADSP_SIZE         0x7800000
 #define MSM_PMEM_AUDIO_SIZE        0x1000 /* (4KB) */
-#ifdef CONFIG_FB_MSM_HDMI_AS_PRIMARY
-#define MSM_PMEM_SIZE 0x4000000 /* 64 Mbytes */
+
+/*#ifdef CONFIG_FB_MSM_HDMI_AS_PRIMARY
+#define MSM_PMEM_SIZE 0x4000000  64 Mbytes 
 #else
-#define MSM_PMEM_SIZE 0x4000000 /* 64 Mbytes */
-#endif
+#define MSM_PMEM_SIZE 0x4000000  64 Mbytes 
+#endif*/
+
+#define MSM_PMEM_SIZE 0x0 
 
 #ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
 #define HOLE_SIZE		0x20000
