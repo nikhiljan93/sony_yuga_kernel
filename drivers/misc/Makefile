@@ -88,4 +88,3 @@ obj-$(CONFIG_SOMC_ISDBT_TUNER) += isdbt_tuner_drv.o
 obj-$(CONFIG_SONY_FELICA_SUPPORT) += felica.o
 obj-$(CONFIG_SONY_FELICA_NFC_SUPPORT) += felica_vdev.o
 obj-$(CONFIG_SONY_ONESEG_TUNER_PM) += oneseg_tunerpm.o
-obj-y +=mako_hotplug_control.o

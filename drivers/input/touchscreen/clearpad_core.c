@@ -137,6 +137,7 @@ do {					\
 } while (0)
 
 int screen_sus=0;
+int in_prog=0;
 int cancel_pwrtrigger = 0;
 int dt2w_switch = 1;
 int s2w_switch =1;
@@ -1942,8 +1943,11 @@ static int synaptics_clearpad_handle_gesture(struct synaptics_clearpad *this)
 		//			"double_tap");
 		
 		#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_DT2WAKE
-		if(dt2w_switch == 1 && screen_sus==1)
-   		dt2w_func();
+		if(dt2w_switch == 1 && screen_sus==1 && in_prog==0)
+		{ 	
+		    in_prog=1;
+   		    dt2w_func();
+		}
 		#endif 
 
 		break;
@@ -1955,8 +1959,11 @@ static int synaptics_clearpad_handle_gesture(struct synaptics_clearpad *this)
 		//rc = evgen_execute(this->input, this->evgen_blocks,
 		//			"two_swipe");
 		#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
-		if(s2w_switch == 1)
-   		dt2w_func();
+		if(s2w_switch == 1 && in_prog==0)
+		{
+		     in_prog=1;
+   		     dt2w_func();
+		}
 		#endif
 
 		break;
@@ -2874,6 +2881,7 @@ static void synaptics_clearpad_early_suspend(struct early_suspend *handler)
 	#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
 	printk("\n [S2W]: Screen suspended\n");        
 	screen_sus = 1;
+	in_prog=0;
 	#endif
 
 
