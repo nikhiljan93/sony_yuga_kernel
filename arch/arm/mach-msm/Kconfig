@@ -2663,6 +2663,13 @@ config RTC_SEMC_ETS
 	default n
 	help
 	  This enables RTC write function with SEMC ETS
+config MSM_HOTPLUG
+	bool "MSM hotplug driver"
+	depends on HOTPLUG_CPU
+	default y
+	help
+	  The MSM hotplug driver controls on-/offlining of additional cores based
+	  on current cpu load.
 
 config MSM_CPR
 	tristate "Use MSM CPR in S/W mode"
