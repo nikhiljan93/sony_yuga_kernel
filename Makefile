@@ -1,6 +1,6 @@
 VERSION = 3
 PATCHLEVEL = 4
-SUBLEVEL = 62
+SUBLEVEL = 63
 EXTRAVERSION =
 NAME = Saber-toothed Squirrel
 
@@ -358,7 +358,7 @@ NEO_FLAG  = -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -ffast-math -fsin
 MODFLAGS  = -DMODULE $(NEO_FLAG)
 CFLAGS_MODULE   = $(MODFLAGS)
 AFLAGS_MODULE   = $(MODFLAGS)
-LDFLAGS_MODULE  =
+LDFLAGS_MODULE  = --strip-debug
 CFLAGS_KERNEL  = $(NEO_FLAG)
 AFLAGS_KERNEL  = $(NEO_FLAG)
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
