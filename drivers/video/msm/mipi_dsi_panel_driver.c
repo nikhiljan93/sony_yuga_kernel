@@ -47,10 +47,6 @@
 #define calc_coltype_num(val, numpart, maxval)\
 	((val >= maxval) ? numpart - 1 : val / (maxval / numpart))
 
-#ifdef CONFIG_GAMMA_CONTROL
-struct dsi_cmd_desc new_color_vals[33];
-#endif
-
 struct fps_array {
 	u32 frame_nbr;
 	u32 time_delta;
@@ -265,59 +261,9 @@ static int panel_execute_cmd(struct msm_fb_data_type *mfd,
 			dev_err(dev, "%s: Unknown command type!\n",
 								__func__);
 		}
-			#ifdef CONFIG_GAMMA_CONTROL
-  memcpy((void *) new_color_vals, (void *) pcmd[n].payload.dsi_payload.dsi, sizeof(new_color_vals));
-	#endif
 exit:
 	return ret;
 }
-
-#ifdef CONFIG_GAMMA_CONTROL
-
-#define RED 1
-#define GREEN 2
-#define BLUE 3
-#define CONTRAST 5
-#define BRIGHTNESS 6
-#define SATURATION 7
-
-void update_vals(int type, int array_pos, int val)
-{
-  int i;
-
-  switch(type) {
-    case RED:
-      new_color_vals[5].payload[array_pos] = val;
-      new_color_vals[6].payload[array_pos] = val;
-      break;
-    case GREEN:
-      new_color_vals[7].payload[array_pos] = val;
-      new_color_vals[8].payload[array_pos] = val;
-      break;
-    case BLUE:
-      new_color_vals[9].payload[array_pos] = val;
-      new_color_vals[10].payload[array_pos] = val;
-      break;
-    case CONTRAST:
-      for (i = 5; i <= 10; i++)
-        new_color_vals[i].payload[type] = val;
-      break;
-    case BRIGHTNESS:
-      for (i = 5; i <= 10; i++)
-        new_color_vals[i].payload[type] = val;
-      break;
-    case SATURATION:
-      for (i = 5; i <= 10; i++)
-        new_color_vals[i].payload[type] = val;
-      break;
-    default:
-      pr_info("%s - Wrong value - abort.\n", __FUNCTION__);
-      return;
-  }
-
-  pr_info("%s - Updating display GAMMA settings.\n", __FUNCTION__);
-}
-#endif
 
 static int panel_id_reg_check(struct msm_fb_data_type *mfd,
 			      struct mipi_dsi_data *dsi_data,
