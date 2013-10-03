@@ -994,6 +994,10 @@ config TOUCHSCREEN_SWEEP2WAKE
         tristate "Sweep2Wake for touchscreens"
         default y
 
+config POCKET_PROTECT
+        tristate "Prevent DT2Wake from waking the phone up in pocket"
+        default n
+
 config TOUCHSCREEN_SYNAPTICS_I2C_RMI4
 	tristate "Synaptics DSX I2C touchscreen"
 	depends on I2C

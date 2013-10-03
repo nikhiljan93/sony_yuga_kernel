@@ -47,6 +47,8 @@
 #define APDS9702_NUM_TRIES      5
 #define APDS9702_WAIT_TIME      5
 
+int power_key_check=0;
+
 struct apds9702data {
 	struct input_dev *input_dev;
 	struct i2c_client *client;
@@ -79,10 +81,10 @@ static int apds9702_write_byte(struct i2c_client *i2c_client, u8 reg, u8 val)
 static void apds9702_report(struct apds9702data *data)
 {
 	struct apds9702_platform_data *pdata = data->client->dev.platform_data;
-	int d = gpio_get_value(pdata->gpio_dout);
-	dev_dbg(&data->client->dev, "%s: gpio = %d\n", __func__, d);
+	int power_key_check = gpio_get_value(pdata->gpio_dout);
+	printk(/*&data->client->dev,*/ /*"%s*/"Proximity: gpio = %d\n"/*, __func__,*/,power_key_check);
 	input_event(data->input_dev, EV_MSC, MSC_RAW,
-		 d == DOUT_VALUE_IF_DETECTED ? 0 : 255);
+		 power_key_check == DOUT_VALUE_IF_DETECTED ? 0 : 255);
 	input_sync(data->input_dev);
 }
 
@@ -470,7 +472,7 @@ static int __init apds9702_init(void)
 }
 
 static void __exit apds9702_exit(void)
-{
+{	
 	i2c_del_driver(&apds9702_driver);
 }
 

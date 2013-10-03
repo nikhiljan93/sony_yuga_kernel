@@ -43,6 +43,7 @@
 #ifdef CONFIG_ARM
 #include <asm/mach-types.h>
 #endif
+#include <linux/apds9702.h>
 
 #define SYNAPTICS_CLEARPAD_VENDOR		0x1
 #define SYNAPTICS_MAX_N_FINGERS			10
@@ -141,6 +142,10 @@ int in_prog=0;
 int cancel_pwrtrigger = 0;
 int dt2w_switch = 1;
 int s2w_switch =1;
+#ifdef CONFIG_POCKET_PROTECT
+extern int power_key_check;
+int pocket_detect = 1;
+#endif
 cputime64_t pwrtrigger_time[2] = {0, 0};
 
 static struct input_dev * dt2wake_pwrdev;
@@ -154,7 +159,16 @@ extern void sweep2wake_setdev(struct input_dev * input_device) {
 EXPORT_SYMBOL(sweep2wake_setdev);
 
 static void dt2wake_presspwr(struct work_struct * dt2wake_presspwr_work) {
+#ifdef CONFIG_POCKET_PROTECT
+  int pocket_mode = 0;
 
+  if (screen_sus == 1 && pocket_detect == 1)
+    pocket_mode = power_key_check;
+    printk("Clear_Proximity: %d/n",pocket_mode);
+
+  if(pocket_mode==1)
+{
+#endif
   if (!mutex_trylock(&pwrkeyworklock))
                   return;
     input_event(dt2wake_pwrdev, EV_KEY, KEY_POWER, 1);
@@ -164,6 +178,9 @@ static void dt2wake_presspwr(struct work_struct * dt2wake_presspwr_work) {
     input_event(dt2wake_pwrdev, EV_SYN, 0, 0);
     msleep(100);
           mutex_unlock(&pwrkeyworklock);
+#ifdef CONFIG_POCKET_PROTECT
+}
+#endif
     return;
 }
 
@@ -191,6 +208,22 @@ static int __init get_dt2w_opt(char *dt2w)
 
 __setup("dt2w=", get_dt2w_opt);
 
+#ifdef CONFIG_POCKET_PROTECT
+static int __init get_pocket_detect_opt(char *pd)
+{
+  if (strcmp(pd, "0") == 0) {
+    pocket_detect = 0;
+  } else if (strcmp(pd, "1") == 0) {
+    pocket_detect = 1;
+  } else {
+    pocket_detect = 0;
+  }
+  return 1;
+}
+
+__setup("pd=", get_pocket_detect_opt); 
+#endif
+
 #ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_DT2WAKE
 
 static ssize_t synaptics_doubletap2wake_show(struct device *dev, struct device_attribute *attr, char *buf)
@@ -208,6 +241,28 @@ static ssize_t synaptics_doubletap2wake_dump(struct device *dev, struct device_a
   }
   return count;
 }
+
+#ifdef CONFIG_POCKET_PROTECT
+static ssize_t synaptics_pocket_detect_show(struct device *dev, struct device_attribute *attr, char *buf)
+ {
+   size_t count = 0;
+   count += sprintf(buf, "%d\n", pocket_detect);
+ 
+   return count;
+ }
+ 
+static ssize_t synaptics_pocket_detect_dump(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+ {
+   if (buf[0] >= '0' && buf[0] <= '1' && buf[1] == '\n')
+                if (pocket_detect != buf[0] - '0')
+            pocket_detect = buf[0] - '0';
+ 
+   return count;
+ }
+ 
+static DEVICE_ATTR(pocket_detect, 0666,
+  synaptics_pocket_detect_show, synaptics_pocket_detect_dump);
+#endif
 
 static DEVICE_ATTR(doubletap2wake, (S_IWUSR|S_IRUGO),
   synaptics_doubletap2wake_show, synaptics_doubletap2wake_dump);
@@ -2650,6 +2705,9 @@ static int lge_touch_sysfs_init(void)
 
   #ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_DT2WAKE
   ret = sysfs_create_file(android_touch_kobj, &dev_attr_doubletap2wake.attr);
+  #ifdef CONFIG_POCKET_PROTECT
+  ret = sysfs_create_file(android_touch_kobj, &dev_attr_pocket_detect.attr);
+  #endif
   if (ret) {
     printk(KERN_ERR "%s: sysfs_create_file failed\n", __func__);
     return ret;
@@ -2665,6 +2723,9 @@ static void lge_touch_sysfs_deinit(void)
   #endif
   #ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_DT2WAKE
   sysfs_remove_file(android_touch_kobj,&dev_attr_doubletap2wake.attr);
+  #ifdef CONFIG_POCKET_PROTECT
+  sysfs_remove_file(android_touch_kobj, &dev_attr_pocket_detect.attr);
+  #endif
   kobject_del(android_touch_kobj);
   #endif
 }

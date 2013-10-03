@@ -921,7 +921,7 @@ static int bma250_power_up(struct driver_data *dd)
 	return rc;
 
 power_up_error:
-	printk(KERN_ERR "%s: Force power doen due to not read bypass status.\n",
+	printk(KERN_ERR "%s: Force power done due to not read bypass status.\n",
 		__func__);
 	(void) dd->pdata->hw_config(&dd->ic_dev->dev, 0);
 hw_setup_error:
