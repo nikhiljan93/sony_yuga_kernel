@@ -122,6 +122,16 @@ static int enqueue_is_link_trb(struct xhci_ring *ring)
 	return TRB_TYPE_LINK_LE32(link->control);
 }
 
+union xhci_trb *xhci_find_next_enqueue(struct xhci_ring *ring)
+{
+	/* Enqueue pointer can be left pointing to the link TRB,
+	 * we must handle that
+	 */
+	if (TRB_TYPE_LINK_LE32(ring->enqueue->link.control))
+		return ring->enq_seg->next->trbs;
+	return ring->enqueue;
+}
+
 /* Updates trb to point to the next TRB in the ring, and updates seg if the next
  * TRB is in a new segment.  This does not skip over link TRBs, and it does not
  * effect the ring dequeue or enqueue pointers.
@@ -728,8 +738,12 @@ remove_finished_td:
 		/* Otherwise ring the doorbell(s) to restart queued transfers */
 		ring_doorbell_for_active_rings(xhci, slot_id, ep_index);
 	}
-	ep->stopped_td = NULL;
-	ep->stopped_trb = NULL;
+
+	/* Clear stopped_td and stopped_trb if endpoint is not halted */
+	if (!(ep->ep_state & EP_HALTED)) {
+		ep->stopped_td = NULL;
+		ep->stopped_trb = NULL;
+	}
 
 	/*
 	 * Drop the lock and complete the URBs in the cancelled TD list.
@@ -1381,6 +1395,12 @@ static void handle_port_status(struct xhci_hcd *xhci,
 				  bus_state->resume_done[faked_port_index]);
 			/* Do the rest in GetPortStatus */
 		}
+		/* There is no command to handle if we get a stop event when the
+		 * command ring is empty, event->cmd_trb points to the next
+		 * unset command
+		 */
+		if (xhci->cmd_ring->dequeue == xhci->cmd_ring->enqueue)
+			return;
 	}
 
 	if ((temp & PORT_PLC) && (temp & PORT_PLS_MASK) == XDEV_U0 &&
