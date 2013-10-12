@@ -1,5 +1,5 @@
 
-CUR_TC=/home/nik/android/test/AK-linaro/4.8.2-2013.08.20130820/bin/
+CUR_TC=/home/nik/android/test/AK-linaro/4.8.2-2013.09.20130923/bin/
 
 
 ### compile kernel
@@ -13,9 +13,9 @@ if [ -f arch/arm/boot/zImage ]
 then
 
 ### copy zImage
-cp arch/arm/boot/zImage ../build/.
+cp arch/arm/boot/zImage ../gbuild/.
 
-cd ../build/
+cd ../gbuild/
 
-/home/nik/android/build/makeit.sh
+/home/nik/android/gbuild/makeit.sh
 fi
