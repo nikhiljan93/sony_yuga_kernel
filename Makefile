@@ -248,7 +248,7 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 HOSTCC       = $(CCACHE) gcc
 HOSTCXX      = $(CCACHE) g++
 HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
-HOSTCXXFLAGS = -Ofast
+HOSTCXXFLAGS = -O2
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -353,11 +353,11 @@ CC		= $(srctree)/scripts/gcc-wrapper.py $(REAL_CC)
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-CFLAGS_MODULE   = -fno-pic -mtune=cortex-a15 -mfpu=neon-vfpv4 -ftree-vectorize
-AFLAGS_MODULE   = -fno-pic -mtune=cortex-a15 -mfpu=neon-vfpv4 -ftree-vectorize
+CFLAGS_MODULE   = -fno-pic -mtune=cortex-a15 -mfpu=neon-vfpv4
+AFLAGS_MODULE   = 
 LDFLAGS_MODULE  = --strip-debug
-CFLAGS_KERNEL	= -fno-pic -mtune=cortex-a15 -mfpu=neon-vfpv4 -ftree-vectorize
-AFLAGS_KERNEL	= -fno-pic -mtune=cortex-a15 -mfpu=neon-vfpv4 -ftree-vectorize
+CFLAGS_KERNEL	=
+AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
@@ -371,7 +371,7 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
 KBUILD_CPPFLAGS := -D__KERNEL__
 
 #
-# AK LINARO OPT
+# LINARO OPT
 #
 CFLAGS_A15 = -march=armv7-a -mtune=cortex-a15 -mfpu=neon-vfpv4 -funsafe-math-optimizations
 CFLAGS_MODULO = -fmodulo-sched -fmodulo-sched-allow-regmoves
@@ -383,8 +383,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -Wno-array-b
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
 		   -ftree-vectorize \
-       		   -mno-unaligned-access \
-       		   $(KERNEL_MODS)
+                   $(KERNEL_MODS)
+
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
