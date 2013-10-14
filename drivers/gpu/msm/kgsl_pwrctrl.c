@@ -371,33 +371,6 @@ static int _get_nearest_pwrlevel(struct kgsl_pwrctrl *pwr, unsigned int clock)
 	return -ERANGE;
 }
 
-void set_max_gpuclk_so(unsigned long val)
-{
-	struct kgsl_pwrctrl *pwr;
-	int ret, level;
-
-	pwr = &Gbldevice->pwrctrl;
-	
-	if (val == 0)
-		val = orig_max;
-	else if (val != 0 && orig_max == 0)
-		orig_max = pwr->pwrlevels[pwr->thermal_pwrlevel].gpu_freq;
-		
-	mutex_lock(&Gbldevice->mutex);
-	level = _get_nearest_pwrlevel(pwr, val);
-	if (level < 0)
-		goto done;
-
-	pwr->thermal_pwrlevel = level;
-
-	if (pwr->thermal_pwrlevel > pwr->active_pwrlevel)
-		kgsl_pwrctrl_pwrlevel_change(Gbldevice, pwr->thermal_pwrlevel);
-
-done:
-	mutex_unlock(&Gbldevice->mutex);
-	
-}
-
 extern void SetGPUpll_config(u32 loc, unsigned long freq);
 extern void SetMAXGPUFreq(unsigned long freq);
 
