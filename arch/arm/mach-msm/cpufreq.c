@@ -78,10 +78,6 @@ static int set_cpu_freq(struct cpufreq_policy *policy, unsigned int new_freq)
 		}
 	}
 	
-	if (new_freq > 0 && new_freq > kthermal_limit)
-   	new_freq = kthermal_limit;
-  	//pr_alert("KT SET CPU FREQ %u-%u-%u\n", new_freq, policy->cur, policy->cpu);
-
 	freqs.old = policy->cur;
 	freqs.new = new_freq;
 	freqs.cpu = policy->cpu;
@@ -129,8 +125,6 @@ static int msm_cpufreq_target(struct cpufreq_policy *policy,
 		ret = -EFAULT;
 		goto done;
 	}
-	if (kthermal_limit > 0 && target_freq > kthermal_limit)
-	    target_freq = kthermal_limit;
 
 	table = cpufreq_frequency_get_table(policy->cpu);
 	if (cpufreq_frequency_table_target(policy, table, target_freq, relation,
@@ -140,7 +134,7 @@ static int msm_cpufreq_target(struct cpufreq_policy *policy,
 		goto done;
 	}
 
-	pr_debug("KT CPU[%d] target %d relation %d (%d-%d) selected %d\n",
+	pr_debug("CPU[%d] target %d relation %d (%d-%d) selected %d\n",
 		policy->cpu, target_freq, relation,
 		policy->min, policy->max, table[index].frequency);
 
@@ -262,16 +256,14 @@ static int __cpuinit msm_cpufreq_init(struct cpufreq_policy *policy)
 
 	if (cpufreq_frequency_table_cpuinfo(policy, table)) {
 #ifdef CONFIG_MSM_CPU_FREQ_SET_MIN_MAX
-	policy->cpuinfo.min_freq = GLOBALKT_MAX_FREQ_LIMIT; //policy->cpuinfo.max_freq;
-	policy->cpuinfo.max_freq  = GLOBALKT_MIN_FREQ_LIMIT; //policy->cpuinfo.min_freq;
+	policy->cpuinfo.min_freq = CONFIG_MSM_CPU_FREQ_MIN;
+	policy->cpuinfo.max_freq = CONFIG_MSM_CPU_FREQ_MAX;
 #endif
 	}
 #ifdef CONFIG_MSM_CPU_FREQ_SET_MIN_MAX
-	policy->min  = GLOBALKT_MAX_FREQ_LIMIT; //policy->cpuinfo.max_freq;
-	policy->max  = GLOBALKT_MIN_FREQ_LIMIT; //policy->cpuinfo.min_freq;
+	policy->min = CONFIG_MSM_CPU_FREQ_MIN;
+	policy->max = CONFIG_MSM_CPU_FREQ_MAX;
 #endif
-
-	pr_alert("MSM_CPUFREQ_INIT: %d-%d\n",policy->max, policy->cpuinfo.max_freq);  
 
 	cur_freq = acpuclk_get_rate(policy->cpu);
 	if (cpufreq_frequency_table_target(policy, table, cur_freq,
