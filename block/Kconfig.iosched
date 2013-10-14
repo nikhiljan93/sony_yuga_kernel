@@ -146,7 +146,11 @@ config DEFAULT_IOSCHED
 	default "row" if DEFAULT_ROW
 	default "cfq" if DEFAULT_CFQ
 	default "noop" if DEFAULT_NOOP
-
+	default "sio" if DEFAULT_SIO
+	default "fiops" if DEFAULT_FIOPS
+	default "vr" if DEFAULT_VR
+	default "zen" if DEFAULT_ZEN
+	default "fifo" if DEFAULT_FIFO
 endmenu
 
 endif
