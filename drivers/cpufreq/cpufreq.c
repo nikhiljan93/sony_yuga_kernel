@@ -32,6 +32,14 @@
 
 #include <trace/events/power.h>
 
+int GLOBALKT_MIN_FREQ_LIMIT = 384000;
+int GLOBALKT_MAX_FREQ_LIMIT = 1728000;
+
+//Global placeholder for CPU policies
+static struct cpufreq_policy trmlpolicy[10];
+//Kthermal limit holder to stop govs from setting CPU speed higher than the thermal limit
+unsigned int kthermal_limit;
+
 /**
  * The "cpufreq driver" - the arch- or hardware-dependent low
  * level driver of CPUFreq support, and its spinlock. This lock
@@ -441,8 +449,59 @@ static ssize_t store_##file_name					\
 	return ret ? ret : count;					\
 }
 
-store_one(scaling_min_freq, min);
-store_one(scaling_max_freq, max);
+//store_one(scaling_min_freq, min);
+//store_one(scaling_max_freq, max);
+
+static ssize_t __ref store_scaling_min_freq(struct cpufreq_policy *policy, const char *buf, size_t count)
+{
+	unsigned int ret = -EINVAL;
+	unsigned int value = 0;
+	struct cpufreq_policy new_policy;
+
+	ret = sscanf(buf, "%u", &value);
+	if (ret != 1)
+		return -EINVAL;
+
+	if (value == 384000)
+		value = 378000;
+
+	if (value <= GLOBALKT_MIN_FREQ_LIMIT)
+		value = GLOBALKT_MIN_FREQ_LIMIT;
+
+	if (!cpu_online(policy->cpu)) cpu_up(policy->cpu);
+
+	ret = cpufreq_get_policy(&new_policy, policy->cpu);
+	new_policy.min = value;
+	ret = __cpufreq_set_policy(policy, &new_policy);
+	policy->user_policy.min = policy->min;
+
+	return count;
+}
+
+static ssize_t __ref store_scaling_max_freq(struct cpufreq_policy *policy, const char *buf, size_t count)
+{
+	unsigned int ret = -EINVAL;
+	unsigned int value = 0;
+	struct cpufreq_policy new_policy;
+
+	ret = sscanf(buf, "%u", &value);
+	if (ret != 1)
+		return -EINVAL;
+
+		if (value > GLOBALKT_MAX_FREQ_LIMIT)
+			value = GLOBALKT_MAX_FREQ_LIMIT;
+		if (value < GLOBALKT_MIN_FREQ_LIMIT)
+			value = GLOBALKT_MIN_FREQ_LIMIT;
+
+		if (!cpu_online(policy->cpu)) cpu_up(policy->cpu);
+
+		ret = cpufreq_get_policy(&new_policy, policy->cpu);
+		new_policy.max = value;
+		ret = __cpufreq_set_policy(policy, &new_policy);
+		policy->user_policy.max = policy->max;
+	return count;
+}
+
 
 /**
  * show_cpuinfo_cur_freq - current CPU frequency as detected by hardware
@@ -1516,10 +1575,20 @@ int __cpufreq_driver_target(struct cpufreq_policy *policy,
 	if (cpufreq_disabled())
 		return -ENODEV;
 
+	//pr_alert("DO KTHERMAL 2 %u-%u-%u\n", target_freq, relation, policy->cpu);
+  
+  if (kthermal_limit > 0 && target_freq > kthermal_limit)
+    target_freq = kthermal_limit;
+
+  //pr_alert("DO KTHERMAL 3 %u-%u-%u\n", target_freq, relation, policy->cpu);
+
 	pr_debug("target for CPU %u: %u kHz, relation %u\n", policy->cpu,
 		target_freq, relation);
 	if (cpu_online(policy->cpu) && cpufreq_driver->target)
+	{	
+		 //pr_alert("DO KTHERMAL 4 %u-%u-%u\n", target_freq, relation, policy->cpu);
 		retval = cpufreq_driver->target(policy, target_freq, relation);
+}
 
 	return retval;
 }
@@ -1702,6 +1771,16 @@ int cpufreq_get_policy(struct cpufreq_policy *policy, unsigned int cpu)
 }
 EXPORT_SYMBOL(cpufreq_get_policy);
 
+void do_kthermal(unsigned int cpu, unsigned int freq)
+{
+  kthermal_limit = freq;
+    if (freq > 0)
+    {
+      //pr_alert("DO KTHERMAL %u-%u\n", cpu, freq);
+    __cpufreq_driver_target(&trmlpolicy[cpu], freq, CPUFREQ_RELATION_H);
+  }
+}
+
 
 /*
  * data   : current policy.
@@ -1718,6 +1797,8 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 	memcpy(&policy->cpuinfo, &data->cpuinfo,
 				sizeof(struct cpufreq_cpuinfo));
 
+	 memcpy(&trmlpolicy[policy->cpu], policy, sizeof(struct cpufreq_policy));
+  
 	if (policy->min > data->max || policy->max < data->min) {
 		ret = -EINVAL;
 		goto error_out;
@@ -1728,6 +1809,23 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 	if (ret)
 		goto error_out;
 
+	//Do KT checker
+  if (policy->cpuinfo.min_freq != GLOBALKT_MIN_FREQ_LIMIT || policy->cpuinfo.max_freq != GLOBALKT_MAX_FREQ_LIMIT)
+  {
+    policy->cpuinfo.min_freq = GLOBALKT_MIN_FREQ_LIMIT;
+    policy->cpuinfo.max_freq = GLOBALKT_MAX_FREQ_LIMIT;
+  }
+  if (policy->min < GLOBALKT_MIN_FREQ_LIMIT || policy->max > GLOBALKT_MAX_FREQ_LIMIT)
+  {
+    policy->min = GLOBALKT_MIN_FREQ_LIMIT;
+    policy->max = GLOBALKT_MAX_FREQ_LIMIT;
+  }
+  if (policy->user_policy.min < GLOBALKT_MIN_FREQ_LIMIT || policy->user_policy.max > GLOBALKT_MAX_FREQ_LIMIT)
+  {
+    policy->user_policy.min = GLOBALKT_MIN_FREQ_LIMIT;
+    policy->user_policy.max = GLOBALKT_MAX_FREQ_LIMIT;
+  }
+	
 	/* adjust if necessary - all reasons */
 	blocking_notifier_call_chain(&cpufreq_policy_notifier_list,
 			CPUFREQ_ADJUST, policy);
@@ -1741,6 +1839,23 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 	ret = cpufreq_driver->verify(policy);
 	if (ret)
 		goto error_out;
+
+	//Do KT checker
+  if (policy->cpuinfo.min_freq != GLOBALKT_MIN_FREQ_LIMIT || policy->cpuinfo.max_freq != GLOBALKT_MAX_FREQ_LIMIT)
+  {
+    policy->cpuinfo.min_freq = GLOBALKT_MIN_FREQ_LIMIT;
+    policy->cpuinfo.max_freq = GLOBALKT_MAX_FREQ_LIMIT;
+  }
+  if (policy->min < GLOBALKT_MIN_FREQ_LIMIT || policy->max > GLOBALKT_MAX_FREQ_LIMIT)
+  {
+    policy->min = GLOBALKT_MIN_FREQ_LIMIT;
+    policy->max = GLOBALKT_MAX_FREQ_LIMIT;
+  }
+  if (policy->user_policy.min < GLOBALKT_MIN_FREQ_LIMIT || policy->user_policy.max > GLOBALKT_MAX_FREQ_LIMIT)
+  {
+    policy->user_policy.min = GLOBALKT_MIN_FREQ_LIMIT;
+    policy->user_policy.max = GLOBALKT_MAX_FREQ_LIMIT;
+  }
 
 	/* notification of the new policy */
 	blocking_notifier_call_chain(&cpufreq_policy_notifier_list,
