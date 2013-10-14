@@ -106,6 +106,21 @@
 #define TOUCHCMD_CHARGER_MODE_START	"cmstart"
 #define TOUCHCMD_CHARGER_MODE_END	"cmend"
 
+static bool ktoonservative_is_activef = false;
+extern void screen_is_on_relay_kt(bool state);
+extern void boostpulse_relay_kt(void);
+extern void hotplugap_boostpulse(void);
+
+void ktoonservative_is_activebd(bool val)
+{
+  ktoonservative_is_activef = val;
+}
+
+void ktoonservative_is_active(bool val)
+{
+  ktoonservative_is_activef = val;
+}
+
 #define LOGx(this, LEVEL, X, ...)				\
 do {								\
 	dev_dbg(&this->pdev->dev, LEVEL "%s: %d: " X,		\
@@ -1777,6 +1792,11 @@ static int synaptics_clearpad_read_fingers(struct synaptics_clearpad *this)
 	u8 *buf = this->reg_buf;
 
 	/* read status and first finger */
+	
+	if (ktoonservative_is_activef)
+	boostpulse_relay_kt();
+	hotplugap_boostpulse();
+
 	memset(buf, 0, SYNAPTICS_REG_MAX);
 	size = SYNAPTICS_FINGER_OFF(this->extents.n_fingers, 1);
 	rc = synaptics_read(this, SYNF(F11_2D, DATA, 0x00), buf, size);
@@ -2688,6 +2708,9 @@ static void synaptics_clearpad_early_suspend(struct early_suspend *handler)
 
 	dev_info(&this->pdev->dev, "early suspend\n");
 	synaptics_clearpad_suspend(&this->pdev->dev);
+
+	if (ktoonservative_is_activef)
+	      screen_is_on_relay_kt(false);
 }
 
 static void synaptics_clearpad_late_resume(struct early_suspend *handler)
@@ -2697,6 +2720,9 @@ static void synaptics_clearpad_late_resume(struct early_suspend *handler)
 
 	dev_info(&this->pdev->dev, "late resume\n");
 	synaptics_clearpad_resume(&this->pdev->dev);
+
+	if (ktoonservative_is_activef)
+	      screen_is_on_relay_kt(true);
 }
 #endif
 #ifdef CONFIG_DEBUG_FS
