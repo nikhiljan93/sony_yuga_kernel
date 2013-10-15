@@ -1793,9 +1793,11 @@ static int synaptics_clearpad_read_fingers(struct synaptics_clearpad *this)
 
 	/* read status and first finger */
 	
+	#ifdef CONFIG_CPU_FREQ_GOV_KTOONSERVATIVEQ
 	if (ktoonservative_is_activef)
 	boostpulse_relay_kt();
 	hotplugap_boostpulse();
+	#endif
 
 	memset(buf, 0, SYNAPTICS_REG_MAX);
 	size = SYNAPTICS_FINGER_OFF(this->extents.n_fingers, 1);
@@ -2709,8 +2711,10 @@ static void synaptics_clearpad_early_suspend(struct early_suspend *handler)
 	dev_info(&this->pdev->dev, "early suspend\n");
 	synaptics_clearpad_suspend(&this->pdev->dev);
 
+	#ifdef CONFIG_CPU_FREQ_GOV_KTOONSERVATIVEQ
 	if (ktoonservative_is_activef)
 	      screen_is_on_relay_kt(false);
+	#endif
 }
 
 static void synaptics_clearpad_late_resume(struct early_suspend *handler)
@@ -2721,8 +2725,10 @@ static void synaptics_clearpad_late_resume(struct early_suspend *handler)
 	dev_info(&this->pdev->dev, "late resume\n");
 	synaptics_clearpad_resume(&this->pdev->dev);
 
+	#ifdef CONFIG_CPU_FREQ_GOV_KTOONSERVATIVEQ
 	if (ktoonservative_is_activef)
 	      screen_is_on_relay_kt(true);
+	#endif
 }
 #endif
 #ifdef CONFIG_DEBUG_FS

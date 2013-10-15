@@ -623,6 +623,7 @@ static ssize_t show_bios_limit(struct cpufreq_policy *policy, char *buf)
 	return sprintf(buf, "%u\n", policy->cpuinfo.max_freq);
 }
 
+#ifdef CONFIG_CPU_FREQ_GOV_KTOONSERVATIVEQ
 static ssize_t show_enable_auto_hotplug(struct cpufreq_policy *policy, char *buf)
 {
   return sprintf(buf, "%u\n", Lenable_auto_hotplug);
@@ -637,6 +638,7 @@ static ssize_t store_enable_auto_hotplug(struct cpufreq_policy *policy,
   apenable_auto_hotplug((bool) Lenable_auto_hotplug);
   return count;
 }
+#endif
 
 #ifdef CONFIG_CPU_VOLTAGE_TABLE
 
@@ -715,7 +717,9 @@ cpufreq_freq_attr_rw(scaling_min_freq);
 cpufreq_freq_attr_rw(scaling_max_freq);
 cpufreq_freq_attr_rw(scaling_governor);
 cpufreq_freq_attr_rw(scaling_setspeed);
+#ifdef CONFIG_CPU_FREQ_GOV_KTOONSERVATIVEQ
 cpufreq_freq_attr_rw(enable_auto_hotplug);
+#endif
 #ifdef CONFIG_CPU_VOLTAGE_TABLE
 define_one_global_rw(vdd_levels);
 #endif
@@ -733,7 +737,9 @@ static struct attribute *default_attrs[] = {
 	&scaling_driver.attr,
 	&scaling_available_governors.attr,
 	&scaling_setspeed.attr,
+#ifdef CONFIG_CPU_FREQ_GOV_KTOONSERVATIVEQ
 	&enable_auto_hotplug.attr,
+#endif
 	NULL
 };
 

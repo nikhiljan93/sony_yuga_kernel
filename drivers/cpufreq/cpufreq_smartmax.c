@@ -102,7 +102,6 @@ extern int tegra_input_boost (struct cpufreq_policy *policy,
 #define DEFAULT_IGNORE_NICE 1
 #endif
 
-#ifdef CONFIG_CPU_FREQ_GOV_SMARTMAX_M7
 #define DEFAULT_SUSPEND_IDEAL_FREQ 594000
 #define DEFAULT_AWAKE_IDEAL_FREQ 1026000
 #define DEFAULT_RAMP_UP_STEP 200000
@@ -117,7 +116,6 @@ extern int tegra_input_boost (struct cpufreq_policy *policy,
 #define DEFAULT_BOOST_FREQ 1350000
 #define DEFAULT_IO_IS_BUSY 0
 #define DEFAULT_IGNORE_NICE 1
-#endif
 
 #ifdef CONFIG_CPU_FREQ_GOV_SMARTMAX_FIND5
 #define DEFAULT_SUSPEND_IDEAL_FREQ 384000
