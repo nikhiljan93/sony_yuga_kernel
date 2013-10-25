@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.4.71 Kernel Configuration
+# Linux/arm 3.4.73 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -45,10 +45,14 @@ CONFIG_EXPERIMENTAL=y
 CONFIG_INIT_ENV_ARG_LIMIT=32
 CONFIG_CROSS_COMPILE=""
 <<<<<<< HEAD
+<<<<<<< HEAD
 CONFIG_LOCALVERSION="XzK-v13"
 =======
 CONFIG_LOCALVERSION="XzK-v13b1"
 >>>>>>> 53525de... ----> 3.4.71
+=======
+CONFIG_LOCALVERSION="XzK-v13b2"
+>>>>>>> 14f2f05... XzK-v14 beta
 # CONFIG_LOCALVERSION_AUTO is not set
 CONFIG_HAVE_KERNEL_GZIP=y
 CONFIG_HAVE_KERNEL_LZMA=y
