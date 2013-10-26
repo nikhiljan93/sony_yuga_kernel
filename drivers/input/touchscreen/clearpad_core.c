@@ -110,6 +110,7 @@ static bool ktoonservative_is_activef = false;
 extern void screen_is_on_relay_kt(bool state);
 extern void boostpulse_relay_kt(void);
 extern void hotplugap_boostpulse(void);
+extern void set_screen_on_off_flag(bool onoff);
 
 void ktoonservative_is_activebd(bool val)
 {
@@ -2712,8 +2713,10 @@ static void synaptics_clearpad_early_suspend(struct early_suspend *handler)
 	synaptics_clearpad_suspend(&this->pdev->dev);
 
 	#ifdef CONFIG_CPU_FREQ_GOV_KTOONSERVATIVEQ
+	set_screen_on_off_flag(false);
 	if (ktoonservative_is_activef)
 	      screen_is_on_relay_kt(false);
+	pr_alert("KT_RELAY_CALL  FROM SCREEN\n");
 	#endif
 }
 
@@ -2726,6 +2729,7 @@ static void synaptics_clearpad_late_resume(struct early_suspend *handler)
 	synaptics_clearpad_resume(&this->pdev->dev);
 
 	#ifdef CONFIG_CPU_FREQ_GOV_KTOONSERVATIVEQ
+	set_screen_on_off_flag(true);
 	if (ktoonservative_is_activef)
 	      screen_is_on_relay_kt(true);
 	#endif
