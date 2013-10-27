@@ -39,14 +39,9 @@ static int hotplug_cpu_enable_up[] = { 0, 58, 68, 78 };
 static int hotplug_cpu_enable_down[] = { 0, 35, 45, 55 };
 static int hotplug_cpu_single_up[] = { 0, 0, 0, 0 };
 static int hotplug_cpu_single_down[] = { 0, 0, 0, 0 };
-static int hotplug_cpu_lockout[] = { 0, 0, 0, 0 };
 static bool hotplug_flag_on = false;
 static unsigned int Lcpu_hotplug_block_cycles = 0;
 static bool hotplug_flag_off = false;
-static bool disable_hotplugging_chrg_override;
-
-void setExtraCores(unsigned int requested_freq);
-unsigned int kt_freq_control[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 /*
  * The polling frequency of this governor depends on the capability of
@@ -71,19 +66,16 @@ static bool screen_is_on = true;
 
 extern void ktoonservative_is_active(bool val);
 extern void ktoonservative_is_activebd(bool val);
-extern void ktoonservative_is_activepk(bool val);
 extern void boost_the_gpu(int freq, int cycles);
+extern void ktoonservative_is_activepk(bool val);
 
 extern void apenable_auto_hotplug(bool state);
 extern bool apget_enable_auto_hotplug(void);
 static bool prev_apenable;
-static bool hotplugInProgress = false;
 
 //extern void kt_is_active_benabled_gpio(bool val);
-extern void kt_is_active_benabled_touchkey(bool val);
+//extern void kt_is_active_benabled_touchkey(bool val);
 //extern void kt_is_active_benabled_power(bool val);
-extern unsigned int get_cable_state(void);
-extern void ktoonservative_is_activechrg(bool val);
 
 #define LATENCY_MULTIPLIER			(1000)
 #define MIN_LATENCY_MULTIPLIER			(100)
@@ -122,8 +114,6 @@ static unsigned int dbs_enable;	/* number of CPUs using this policy */
  */
 static DEFINE_MUTEX(dbs_mutex);
 
-static struct workqueue_struct *dbs_wq;
-
 static struct dbs_tuners {
 	unsigned int sampling_rate;
 	unsigned int sampling_rate_screen_off;
@@ -139,21 +129,15 @@ static struct dbs_tuners {
 	unsigned int cpu_down_block_cycles;
 	unsigned int cpu_hotplug_block_cycles;
 	unsigned int touch_boost_cpu;
-	unsigned int touch_boost_cpu_all_cores;
 	unsigned int touch_boost_2nd_core;
 	unsigned int touch_boost_3rd_core;
 	unsigned int touch_boost_4th_core;
 	unsigned int boost_2nd_core_on_button;
 	unsigned int boost_3rd_core_on_button;
 	unsigned int boost_4th_core_on_button;
-	unsigned int lockout_2nd_core_hotplug;
-	unsigned int lockout_3rd_core_hotplug;
-	unsigned int lockout_4th_core_hotplug;
 	//unsigned int touch_boost_gpu;
-	unsigned int sync_extra_cores;
 	unsigned int boost_hold_cycles;
 	unsigned int disable_hotplugging;
-	unsigned int disable_hotplugging_chrg;
 	unsigned int disable_hotplug_bt;
 	unsigned int no_extra_cores_screen_off;
 	unsigned int ignore_nice;
@@ -170,21 +154,15 @@ static struct dbs_tuners {
 	.cpu_down_block_cycles = DEF_CPU_DOWN_BLOCK_CYCLES,
 	.cpu_hotplug_block_cycles = DEF_CPU_DOWN_BLOCK_CYCLES,
 	.touch_boost_cpu = DEF_BOOST_CPU,
-	.touch_boost_cpu_all_cores = 0,
 	.touch_boost_2nd_core = 1,
 	.touch_boost_3rd_core = 0,
 	.touch_boost_4th_core = 0,
 	.boost_2nd_core_on_button = 1,
 	.boost_3rd_core_on_button = 0,
 	.boost_4th_core_on_button = 0,
-	.lockout_2nd_core_hotplug = 0,
-	.lockout_3rd_core_hotplug = 0,
-	.lockout_4th_core_hotplug = 0,
 	//.touch_boost_gpu = DEF_BOOST_GPU,
-	.sync_extra_cores = 0,
 	.boost_hold_cycles = DEF_BOOST_HOLD_CYCLES,
 	.disable_hotplugging = DEF_DISABLE_HOTPLUGGING,
-	.disable_hotplugging_chrg = 0,
 	.disable_hotplug_bt = 0,
 	.no_extra_cores_screen_off = 1,
 	.sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR,
@@ -271,29 +249,11 @@ void set_bluetooth_state_kt(bool val)
 				if (!cpu_online(cpu))
 					hotplug_cpu_single_up[cpu] = 1;
 			}
-			if (!hotplugInProgress)
-				queue_work_on(0, dbs_wq, &hotplug_online_work);
+			schedule_work_on(0, &hotplug_online_work);
 		}
 	}
 	else
 		disable_hotplug_bt_active = false;
-}
-
-void send_cable_state_kt(unsigned int state)
-{
-	int cpu;
-	if (state && dbs_tuners_ins.disable_hotplugging_chrg)
-	{
-		disable_hotplugging_chrg_override = true;
-		for (cpu = 1; cpu < CPUS_AVAILABLE; cpu++)
-			hotplug_cpu_single_up[cpu] = 1;
-		if (!hotplugInProgress)
-			queue_work_on(0, dbs_wq, &hotplug_online_work);
-	}
-	else
-	{
-		disable_hotplugging_chrg_override = false;
-	}
 }
 
 /************************** sysfs interface ************************/
@@ -308,18 +268,6 @@ static ssize_t show_touch_boost_cpu(struct kobject *kobj,
 				      struct attribute *attr, char *buf)
 {
 	return sprintf(buf, "%u\n", dbs_tuners_ins.touch_boost_cpu / 1000);
-}
-
-static ssize_t show_touch_boost_cpu_all_cores(struct kobject *kobj,
-				      struct attribute *attr, char *buf)
-{
-	return sprintf(buf, "%u\n", dbs_tuners_ins.touch_boost_cpu_all_cores);
-}
-
-static ssize_t show_sync_extra_cores(struct kobject *kobj,
-				      struct attribute *attr, char *buf)
-{
-	return sprintf(buf, "%u\n", dbs_tuners_ins.sync_extra_cores);
 }
 
 /* cpufreq_ktoonservative Governor Tunables */
@@ -348,13 +296,9 @@ show_one(touch_boost_4th_core, touch_boost_4th_core);
 show_one(boost_2nd_core_on_button, boost_2nd_core_on_button);
 show_one(boost_3rd_core_on_button, boost_3rd_core_on_button);
 show_one(boost_4th_core_on_button, boost_4th_core_on_button);
-show_one(lockout_2nd_core_hotplug, lockout_2nd_core_hotplug);
-show_one(lockout_3rd_core_hotplug, lockout_3rd_core_hotplug);
-show_one(lockout_4th_core_hotplug, lockout_4th_core_hotplug);
 //show_one(touch_boost_gpu, touch_boost_gpu);
 show_one(boost_hold_cycles, boost_hold_cycles);
 show_one(disable_hotplugging, disable_hotplugging);
-show_one(disable_hotplugging_chrg, disable_hotplugging_chrg);
 show_one(disable_hotplug_bt, disable_hotplug_bt);
 show_one(no_extra_cores_screen_off, no_extra_cores_screen_off);
 show_one(ignore_nice_load, ignore_nice);
@@ -574,57 +518,11 @@ static ssize_t store_touch_boost_cpu(struct kobject *a, struct attribute *b,
 	if (ret != 1)
 		return -EINVAL;
 
-	if (input * 1000 > GLOBALKT_MAX_FREQ_LIMIT)
-		input = GLOBALKT_MAX_FREQ_LIMIT;
+	if (input * 1000 > CONFIG_MSM_CPU_FREQ_MAX)
+		input = CONFIG_MSM_CPU_FREQ_MAX;
 	if (input * 1000 < 0)
 		input = 0;
 	dbs_tuners_ins.touch_boost_cpu = input * 1000;
-	return count;
-}
-
-static ssize_t store_touch_boost_cpu_all_cores(struct kobject *a, struct attribute *b,
-				    const char *buf, size_t count)
-{
-	unsigned int input;
-	int ret, i;
-
-	ret = sscanf(buf, "%u", &input);
-
-	if (ret != 1)
-		return -EINVAL;
-
-	if (input != 0 && input != 1)
-		input = 1;
-	dbs_tuners_ins.touch_boost_cpu_all_cores = input;
-
-	if (dbs_tuners_ins.sync_extra_cores == 0 && dbs_tuners_ins.touch_boost_cpu_all_cores == 0)
-	{
-		for (i = 0; i < CPUS_AVAILABLE; i++)
-			kt_freq_control[i] = 0;
-	}
-	return count;
-}
-
-static ssize_t store_sync_extra_cores(struct kobject *a, struct attribute *b,
-				    const char *buf, size_t count)
-{
-	unsigned int input;
-	int ret, i;
-
-	ret = sscanf(buf, "%u", &input);
-
-	if (ret != 1)
-		return -EINVAL;
-
-	if (input != 0 && input != 1)
-		input = 1;
-	dbs_tuners_ins.sync_extra_cores = input;
-	
-	if (dbs_tuners_ins.sync_extra_cores == 0 && dbs_tuners_ins.touch_boost_cpu_all_cores == 0)
-	{
-		for (i = 0; i < CPUS_AVAILABLE; i++)
-			kt_freq_control[i] = 0;
-	}
 	return count;
 }
 
@@ -670,87 +568,6 @@ static ssize_t store_touch_boost_4th_core(struct kobject *a, struct attribute *b
 	return count;
 }
 
-static ssize_t store_lockout_2nd_core_hotplug(struct kobject *a, struct attribute *b,
-				    const char *buf, size_t count)
-{
-	unsigned int input;
-	int ret, cpu;
-	ret = sscanf(buf, "%u", &input);
-
-	if (input != 0 && input != 1 && input != 2)
-		input = 0;
-
-	dbs_tuners_ins.lockout_2nd_core_hotplug = input;
-	hotplug_cpu_lockout[1] = input;
-	if (input == 1)
-	{
-		hotplug_cpu_single_up[1] = 1;
-		if (!hotplugInProgress)
-			queue_work_on(0, dbs_wq, &hotplug_online_work);
-	}
-	else if (input == 2)
-	{
-		hotplug_cpu_single_down[1] = 1;
-		if (!hotplugInProgress)
-			queue_work_on(0, dbs_wq, &hotplug_offline_work);
-	}
-	return count;
-}
-
-static ssize_t store_lockout_3rd_core_hotplug(struct kobject *a, struct attribute *b,
-				    const char *buf, size_t count)
-{
-	unsigned int input;
-	int ret, cpu;
-	ret = sscanf(buf, "%u", &input);
-
-	if (input != 0 && input != 1 && input != 2)
-		input = 0;
-
-	dbs_tuners_ins.lockout_3rd_core_hotplug = input;
-	hotplug_cpu_lockout[2] = input;
-	if (input == 1)
-	{
-		hotplug_cpu_single_up[2] = 1;
-		if (!hotplugInProgress)
-			queue_work_on(0, dbs_wq, &hotplug_online_work);
-	}
-	else if (input == 2)
-	{
-		hotplug_cpu_single_down[2] = 1;
-		if (!hotplugInProgress)
-			queue_work_on(0, dbs_wq, &hotplug_offline_work);
-	}
-	return count;
-}
-
-static ssize_t store_lockout_4th_core_hotplug(struct kobject *a, struct attribute *b,
-				    const char *buf, size_t count)
-{
-	unsigned int input;
-	int ret, cpu;
-	ret = sscanf(buf, "%u", &input);
-
-	if (input != 0 && input != 1 && input != 2)
-		input = 0;
-
-	dbs_tuners_ins.lockout_4th_core_hotplug = input;
-	hotplug_cpu_lockout[3] = input;
-	if (input == 1)
-	{
-		hotplug_cpu_single_up[3] = 1;
-		if (!hotplugInProgress)
-			queue_work_on(0, dbs_wq, &hotplug_online_work);
-	}
-	else if (input == 2)
-	{
-		hotplug_cpu_single_down[3] = 1;
-		if (!hotplugInProgress)
-			queue_work_on(0, dbs_wq, &hotplug_offline_work);
-	}
-	return count;
-}
-
 /*static ssize_t store_touch_boost_gpu(struct kobject *a, struct attribute *b,
 				    const char *buf, size_t count)
 {
@@ -782,36 +599,13 @@ static ssize_t store_boost_hold_cycles(struct kobject *a, struct attribute *b,
 static ssize_t store_disable_hotplugging(struct kobject *a, struct attribute *b, const char *buf, size_t count)
 {
 	unsigned int input;
-	int ret, cpu;
+	int ret;
 	ret = sscanf(buf, "%u", &input);
 
 	if (input != 0 && input != 1)
 		input = 0;
 
 	dbs_tuners_ins.disable_hotplugging = input;
-	if (input == 1)
-	{
-		for (cpu = 1; cpu < CPUS_AVAILABLE; cpu++)
-			hotplug_cpu_single_up[cpu] = 1;
-		if (!hotplugInProgress)
-			queue_work_on(0, dbs_wq, &hotplug_online_work);
-	}
-	return count;
-}
-
-static ssize_t store_disable_hotplugging_chrg(struct kobject *a, struct attribute *b, const char *buf, size_t count)
-{
-	unsigned int input, c_state;
-	int ret, cpu;
-	ret = sscanf(buf, "%u", &input);
-
-	if (input != 0 && input != 1)
-		input = 0;
-
-	dbs_tuners_ins.disable_hotplugging_chrg = input;
-	c_state = get_cable_state();
-	send_cable_state_kt(c_state);
-		
 	return count;
 }
 
@@ -841,7 +635,7 @@ static ssize_t store_boost_2nd_core_on_button(struct kobject *a, struct attribut
 	if (dbs_tuners_ins.boost_2nd_core_on_button == 1)
 	{
 		//kt_is_active_benabled_gpio(true);
-		kt_is_active_benabled_touchkey(true);
+		//kt_is_active_benabled_touchkey(true);
 		//kt_is_active_benabled_power(true);
 	}
 
@@ -861,7 +655,7 @@ static ssize_t store_boost_3rd_core_on_button(struct kobject *a, struct attribut
 	if (dbs_tuners_ins.boost_3rd_core_on_button == 1)
 	{
 		//kt_is_active_benabled_gpio(true);
-		kt_is_active_benabled_touchkey(true);
+		//kt_is_active_benabled_touchkey(true);
 		//kt_is_active_benabled_power(true);
 	}
 
@@ -881,7 +675,7 @@ static ssize_t store_boost_4th_core_on_button(struct kobject *a, struct attribut
 	if (dbs_tuners_ins.boost_4th_core_on_button == 1)
 	{
 		//kt_is_active_benabled_gpio(true);
-		kt_is_active_benabled_touchkey(true);
+		//kt_is_active_benabled_touchkey(true);
 		//kt_is_active_benabled_power(true);
 	}
 
@@ -966,21 +760,15 @@ define_one_global_rw(down_threshold_hotplug_3);
 define_one_global_rw(cpu_down_block_cycles);
 define_one_global_rw(cpu_hotplug_block_cycles);
 define_one_global_rw(touch_boost_cpu);
-define_one_global_rw(touch_boost_cpu_all_cores);
 define_one_global_rw(touch_boost_2nd_core);
 define_one_global_rw(touch_boost_3rd_core);
 define_one_global_rw(touch_boost_4th_core);
 define_one_global_rw(boost_2nd_core_on_button);
 define_one_global_rw(boost_3rd_core_on_button);
 define_one_global_rw(boost_4th_core_on_button);
-define_one_global_rw(lockout_2nd_core_hotplug);
-define_one_global_rw(lockout_3rd_core_hotplug);
-define_one_global_rw(lockout_4th_core_hotplug);
 //define_one_global_rw(touch_boost_gpu);
-define_one_global_rw(sync_extra_cores);
 define_one_global_rw(boost_hold_cycles);
 define_one_global_rw(disable_hotplugging);
-define_one_global_rw(disable_hotplugging_chrg);
 define_one_global_rw(disable_hotplug_bt);
 define_one_global_rw(no_extra_cores_screen_off);
 define_one_global_rw(ignore_nice_load);
@@ -1002,21 +790,15 @@ static struct attribute *dbs_attributes[] = {
 	&cpu_down_block_cycles.attr,
 	&cpu_hotplug_block_cycles.attr,
 	&touch_boost_cpu.attr,
-	&touch_boost_cpu_all_cores.attr,
 	&touch_boost_2nd_core.attr,
 	&touch_boost_3rd_core.attr,
 	&touch_boost_4th_core.attr,
 	&boost_2nd_core_on_button.attr,
 	&boost_3rd_core_on_button.attr,
 	&boost_4th_core_on_button.attr,
-	&lockout_2nd_core_hotplug.attr,
-	&lockout_3rd_core_hotplug.attr,
-	&lockout_4th_core_hotplug.attr,
 	//&touch_boost_gpu.attr,
-	&sync_extra_cores.attr,
 	&boost_hold_cycles.attr,
 	&disable_hotplugging.attr,
-	&disable_hotplugging_chrg.attr,
 	&disable_hotplug_bt.attr,
 	&no_extra_cores_screen_off.attr,
 	&ignore_nice_load.attr,
@@ -1046,49 +828,21 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	{
 		if (stored_sampling_rate != 0 && screen_is_on)
 			dbs_tuners_ins.sampling_rate = stored_sampling_rate;
-		this_dbs_info->down_skip = 0;
-
 		if (boost_hold_cycles_cnt >= dbs_tuners_ins.boost_hold_cycles)
 		{
 			boostpulse_relayf = false;
 			boost_hold_cycles_cnt = 0;
-			if (dbs_tuners_ins.sync_extra_cores == 0)
-			{
-				for (cpu = 0; cpu < CPUS_AVAILABLE; cpu++)
-					kt_freq_control[cpu] = 0;
-			}
-			goto boostcomplete;
 		}
 		boost_hold_cycles_cnt++;
 
-		if (dbs_tuners_ins.touch_boost_cpu_all_cores && policy->cpu == 0)
-		{
-			for (cpu = 1; cpu < CPUS_AVAILABLE; cpu++)
-			{
-				if (&trmlpolicy[cpu] != NULL)
-				{
-					if (cpu_online(cpu))
-					{
-						if (trmlpolicy[cpu].cur < dbs_tuners_ins.touch_boost_cpu)
-						{
-							//__cpufreq_driver_target(&trmlpolicy[cpu], dbs_tuners_ins.touch_boost_cpu,
-							//	CPUFREQ_RELATION_H);
-							kt_freq_control[cpu] = dbs_tuners_ins.touch_boost_cpu;
-							//pr_alert("BOOST EXTRA CPUs: %d\n", cpu);
-						}
-					}
-				}
-			}
-		}
-		
+		this_dbs_info->down_skip = 0;
 		/* if we are already at full speed then break out early */
 		if (this_dbs_info->requested_freq == policy->max || policy->cur > dbs_tuners_ins.touch_boost_cpu || this_dbs_info->requested_freq > dbs_tuners_ins.touch_boost_cpu)
 			return;
-		
+
 		this_dbs_info->requested_freq = dbs_tuners_ins.touch_boost_cpu;
 		__cpufreq_driver_target(policy, this_dbs_info->requested_freq,
 			CPUFREQ_RELATION_H);
-boostcomplete:
 		return;
 	}
 	
@@ -1154,45 +908,41 @@ boostcomplete:
 	 */
 	if (dbs_tuners_ins.freq_step == 0)
 		return;
-	
-	if (policy->cpu == 0)
+
+	for (cpu = 1; cpu < CPUS_AVAILABLE; cpu++)
 	{
-		for (cpu = 1; cpu < CPUS_AVAILABLE; cpu++)
+		if (max_load >= hotplug_cpu_enable_up[cpu] && (!cpu_online(cpu)))
 		{
-			if (max_load >= hotplug_cpu_enable_up[cpu] && (!cpu_online(cpu)) && hotplug_cpu_lockout[cpu] != 2)
+			if (Lcpu_hotplug_block_cycles > dbs_tuners_ins.cpu_hotplug_block_cycles)
 			{
-				if (Lcpu_hotplug_block_cycles > dbs_tuners_ins.cpu_hotplug_block_cycles)
-				{
-					hotplug_cpu_single_up[cpu] = 1;
-					hotplug_flag_on = true;
-					Lcpu_hotplug_block_cycles = 0;
-				}
-				Lcpu_hotplug_block_cycles++;
-				break;
+				hotplug_cpu_single_up[cpu] = 1;
+				hotplug_flag_on = true;
+				Lcpu_hotplug_block_cycles = 0;
 			}
-			else if (max_load <= hotplug_cpu_enable_down[CPUS_AVAILABLE - cpu] && (cpu_online(CPUS_AVAILABLE - cpu)) && hotplug_cpu_lockout[CPUS_AVAILABLE - cpu] != 1)
-			{
-				hotplug_cpu_single_down[CPUS_AVAILABLE - cpu] = 1;
-				hotplug_flag_off = true;
-				break;
-			}
+			Lcpu_hotplug_block_cycles++;
+			break;
 		}
-		//pr_alert("LOAD CHECK: %d-%d-%d-%d-%d-%d-%d\n", max_load, hotplug_cpu_single_up[1], hotplug_cpu_single_up[2], hotplug_cpu_single_up[3], hotplug_cpu_enable_up[1], hotplug_cpu_enable_up[2], hotplug_cpu_enable_up[3]);
+		else if (max_load <= hotplug_cpu_enable_down[CPUS_AVAILABLE - cpu] && (cpu_online(CPUS_AVAILABLE - cpu)))
+		{
+			hotplug_cpu_single_down[CPUS_AVAILABLE - cpu] = 1;
+			hotplug_flag_off = true;
+			break;
+		}
+	}
+	//pr_alert("LOAD CHECK: %d-%d-%d-%d-%d-%d-%d\n", max_load, hotplug_cpu_single_up[1], hotplug_cpu_single_up[2], hotplug_cpu_single_up[3], hotplug_cpu_enable_up[1], hotplug_cpu_enable_up[2], hotplug_cpu_enable_up[3]);
 	
-		/* Check for frequency increase is greater than hotplug value */
-		//CPUS_AVAILABLE
-		if (hotplug_flag_on) {
-			if (policy->cur > (policy->min * 2))
+	/* Check for frequency increase is greater than hotplug value */
+	//CPUS_AVAILABLE
+	if (hotplug_flag_on) {
+		if (policy->cur > (policy->min * 2))
+		{
+			if (Lcpu_up_block_cycles > dbs_tuners_ins.cpu_down_block_cycles && (dbs_tuners_ins.no_extra_cores_screen_off == 0 || (dbs_tuners_ins.no_extra_cores_screen_off == 1 && screen_is_on)))
 			{
-				if (Lcpu_up_block_cycles > dbs_tuners_ins.cpu_down_block_cycles && (dbs_tuners_ins.no_extra_cores_screen_off == 0 || (dbs_tuners_ins.no_extra_cores_screen_off == 1 && screen_is_on)))
-				{
-					hotplug_flag_on = false;
-					if (!hotplugInProgress && policy->cpu == 0)
-						queue_work_on(policy->cpu, dbs_wq, &hotplug_online_work);
-					Lcpu_up_block_cycles = 0;
-				}
-				Lcpu_up_block_cycles++;
+				hotplug_flag_on = false;
+				schedule_work_on(0, &hotplug_online_work);
+				Lcpu_up_block_cycles = 0;
 			}
+			Lcpu_up_block_cycles++;
 		}
 	}
 
@@ -1214,20 +964,18 @@ boostcomplete:
 		if (this_dbs_info->requested_freq > policy->max)
 			this_dbs_info->requested_freq = policy->max;
 
-		__cpufreq_driver_target(policy, this_dbs_info->requested_freq, CPUFREQ_RELATION_H);
-		if (dbs_tuners_ins.sync_extra_cores && policy->cpu == 0)
-			setExtraCores(this_dbs_info->requested_freq);
+		__cpufreq_driver_target(policy, this_dbs_info->requested_freq,
+			CPUFREQ_RELATION_H);
 		return;
 	}
-	
-	if (policy->cpu == 0 && hotplug_flag_off && !dbs_tuners_ins.disable_hotplugging && !disable_hotplugging_chrg_override && disable_hotplug_bt_active == false) {
+
+	if (hotplug_flag_off && !dbs_tuners_ins.disable_hotplugging && disable_hotplug_bt_active == false) {
 		if (num_online_cpus() > 1)
 		{
 			if (Lcpu_down_block_cycles > dbs_tuners_ins.cpu_down_block_cycles)
 			{
 				hotplug_flag_off = false;
-				if (!hotplugInProgress && policy->cpu == 0)
-					queue_work_on(policy->cpu, dbs_wq, &hotplug_offline_work);
+				schedule_work_on(0, &hotplug_offline_work);
 				Lcpu_down_block_cycles = 0;
 			}
 			Lcpu_down_block_cycles++;
@@ -1251,53 +999,9 @@ boostcomplete:
 		if (policy->cur == policy->min)
 			return;
 
-		__cpufreq_driver_target(policy, this_dbs_info->requested_freq, CPUFREQ_RELATION_H);
-		if (dbs_tuners_ins.sync_extra_cores && policy->cpu == 0)
-			setExtraCores(this_dbs_info->requested_freq);
+		__cpufreq_driver_target(policy, this_dbs_info->requested_freq,
+				CPUFREQ_RELATION_H);
 		return;
-	}
-}
-
-void setExtraCores(unsigned int requested_freq)
-{
-	unsigned int cpu;
-	for (cpu = 1; cpu < CPUS_AVAILABLE; cpu++)
-	{
-		if (&trmlpolicy[cpu] != NULL)
-		{
-			if (cpu_online(cpu))
-			{
-				//__cpufreq_driver_target(&trmlpolicy[cpu], requested_freq, CPUFREQ_RELATION_H);
-				kt_freq_control[cpu] = requested_freq;
-				//pr_alert("BOOST EXTRA CPUs: %d\n", cpu);
-			}
-		}
-	}
-}
-
-void check_boost_cores_up(bool dec1, bool dec2, bool dec3)
-{
-	bool got_boost_core = false;
-
-	if (!cpu_online(1) && dec1 && hotplug_cpu_lockout[1] != 2)
-	{
-		hotplug_cpu_single_up[1] = 1;
-		got_boost_core = true;
-	}
-	if (!cpu_online(2) && dec2 && hotplug_cpu_lockout[2] != 2)
-	{
-		hotplug_cpu_single_up[2] = 1;
-		got_boost_core = true;
-	}
-	if (!cpu_online(3) && dec3 && hotplug_cpu_lockout[3] != 2)
-	{
-		hotplug_cpu_single_up[3] = 1;
-		got_boost_core = true;
-	}
-	if (got_boost_core)
-	{
-		if (!hotplugInProgress)
-			queue_work_on(0, dbs_wq, &hotplug_online_work);
 	}
 }
 
@@ -1309,8 +1013,22 @@ void screen_is_on_relay_kt(bool state)
 		if (stored_sampling_rate > 0)
 			dbs_tuners_ins.sampling_rate = stored_sampling_rate; //max(input, min_sampling_rate);
 
-		check_boost_cores_up(dbs_tuners_ins.boost_2nd_core_on_button, dbs_tuners_ins.boost_3rd_core_on_button, dbs_tuners_ins.boost_4th_core_on_button);
-				
+		if (num_online_cpus() < 2 && dbs_tuners_ins.boost_2nd_core_on_button)
+		{
+			hotplug_cpu_single_up[1] = 1;
+			schedule_work_on(0, &hotplug_online_work);
+		}
+		if (num_online_cpus() < 3 && dbs_tuners_ins.boost_3rd_core_on_button)
+		{
+			hotplug_cpu_single_up[2] = 1;
+			schedule_work_on(0, &hotplug_online_work);
+		}
+		if (num_online_cpus() < 4 && dbs_tuners_ins.boost_4th_core_on_button)
+		{
+			hotplug_cpu_single_up[3] = 1;
+			schedule_work_on(0, &hotplug_online_work);
+		}
+			
 		//pr_alert("SCREEN_IS_ON1: %d-%d\n", dbs_tuners_ins.sampling_rate, stored_sampling_rate);
 	}
 	else
@@ -1326,10 +1044,6 @@ void boostpulse_relay_kt(void)
 {
 	if (!boostpulse_relayf)
 	{
-		bool got_boost_core = false;
-
-		if (dbs_tuners_ins.touch_boost_2nd_core == 0 && dbs_tuners_ins.touch_boost_3rd_core == 0 && dbs_tuners_ins.touch_boost_4th_core == 0 && dbs_tuners_ins.touch_boost_cpu == 0) // && dbs_tuners_ins.touch_boost_gpu == 0)
-			return;
 		/*if (dbs_tuners_ins.touch_boost_gpu > 0)
 		{
 			int bpc = (dbs_tuners_ins.boost_hold_cycles / 2);
@@ -1338,8 +1052,24 @@ void boostpulse_relay_kt(void)
 			else
 				boost_the_gpu(dbs_tuners_ins.touch_boost_gpu, 0);
 		}*/
-		check_boost_cores_up(dbs_tuners_ins.touch_boost_2nd_core, dbs_tuners_ins.touch_boost_3rd_core, dbs_tuners_ins.touch_boost_4th_core);
-			
+		if (num_online_cpus() < 2 && dbs_tuners_ins.touch_boost_2nd_core)
+		{
+			hotplug_cpu_single_up[1] = 1;
+			schedule_work_on(0, &hotplug_online_work);
+		}
+		if (num_online_cpus() < 3 && dbs_tuners_ins.touch_boost_3rd_core)
+		{
+			hotplug_cpu_single_up[2] = 1;
+			schedule_work_on(0, &hotplug_online_work);
+		}
+		if (num_online_cpus() < 4 && dbs_tuners_ins.touch_boost_4th_core)
+		{
+			hotplug_cpu_single_up[3] = 1;
+			schedule_work_on(0, &hotplug_online_work);
+		}
+		if (dbs_tuners_ins.touch_boost_2nd_core == 0 && dbs_tuners_ins.touch_boost_3rd_core == 0 && dbs_tuners_ins.touch_boost_4th_core == 0 && dbs_tuners_ins.touch_boost_cpu == 0) // && dbs_tuners_ins.touch_boost_gpu == 0)
+			return;
+
 		boostpulse_relayf = true;
 		boost_hold_cycles_cnt = 0;
 		//dbs_tuners_ins.sampling_rate = min_sampling_rate;
@@ -1373,7 +1103,6 @@ static void __cpuinit hotplug_offline_work_fn(struct work_struct *work)
 			//pr_info("auto_hotplug: CPU%d down.\n", cpu);
 		}
 	}
-	hotplugInProgress = false;
 }
 
 static void __cpuinit hotplug_online_work_fn(struct work_struct *work)
@@ -1390,7 +1119,6 @@ static void __cpuinit hotplug_online_work_fn(struct work_struct *work)
 			//pr_info("auto_hotplug: CPU%d up.\n", cpu);
 		}
 	}
-	hotplugInProgress = false;
 }
 
 static void do_dbs_timer(struct work_struct *work)
@@ -1408,7 +1136,7 @@ static void do_dbs_timer(struct work_struct *work)
 
 	dbs_check_cpu(dbs_info);
 
-	queue_delayed_work_on(cpu, dbs_wq, &dbs_info->work, delay);
+	schedule_delayed_work_on(cpu, &dbs_info->work, delay);
 	mutex_unlock(&dbs_info->timer_mutex);
 }
 
@@ -1420,15 +1148,13 @@ static inline void dbs_timer_init(struct cpu_dbs_info_s *dbs_info)
 
 	dbs_info->enable = 1;
 	INIT_DELAYED_WORK_DEFERRABLE(&dbs_info->work, do_dbs_timer);
-	queue_delayed_work_on(dbs_info->cpu, dbs_wq, &dbs_info->work, delay);
+	schedule_delayed_work_on(dbs_info->cpu, &dbs_info->work, delay);
 }
 
 static inline void dbs_timer_exit(struct cpu_dbs_info_s *dbs_info)
 {
 	dbs_info->enable = 0;
 	cancel_delayed_work_sync(&dbs_info->work);
-	cancel_work_sync(&hotplug_offline_work);
-	cancel_work_sync(&hotplug_online_work);
 }
 
 static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
@@ -1446,11 +1172,10 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		ktoonservative_is_active(true);
 		ktoonservative_is_activebd(true);
 		ktoonservative_is_activepk(true);
-		ktoonservative_is_activechrg(true);
 		if (dbs_tuners_ins.boost_2nd_core_on_button == 1 || dbs_tuners_ins.boost_3rd_core_on_button == 1 || dbs_tuners_ins.boost_4th_core_on_button == 1)
     		{
       			//kt_is_active_benabled_gpio(true);
-		      	kt_is_active_benabled_touchkey(true);
+		      	//kt_is_active_benabled_touchkey(true);
       			//kt_is_active_benabled_power(true);
     		}
 		
@@ -1520,9 +1245,8 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		ktoonservative_is_active(false);
 		ktoonservative_is_activebd(false);
 		ktoonservative_is_activepk(false);
-		ktoonservative_is_activechrg(false);
     		//kt_is_active_benabled_gpio(false);
-    		kt_is_active_benabled_touchkey(false);
+    		//kt_is_active_benabled_touchkey(false);
     		//kt_is_active_benabled_power(false);
 		
 		apenable_auto_hotplug(prev_apenable);
@@ -1552,13 +1276,13 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 	case CPUFREQ_GOV_LIMITS:
 		mutex_lock(&this_dbs_info->timer_mutex);
 		if (policy->max < this_dbs_info->cur_policy->cur)
-		{
-			__cpufreq_driver_target(this_dbs_info->cur_policy, policy->max, CPUFREQ_RELATION_H);
-		}
+			__cpufreq_driver_target(
+					this_dbs_info->cur_policy,
+					policy->max, CPUFREQ_RELATION_H);
 		else if (policy->min > this_dbs_info->cur_policy->cur)
-		{
-			__cpufreq_driver_target(this_dbs_info->cur_policy, policy->min, CPUFREQ_RELATION_L);
-		}
+			__cpufreq_driver_target(
+					this_dbs_info->cur_policy,
+					policy->min, CPUFREQ_RELATION_L);
 		dbs_check_cpu(this_dbs_info);
 		mutex_unlock(&this_dbs_info->timer_mutex);
 
@@ -1579,12 +1303,6 @@ struct cpufreq_governor cpufreq_gov_ktoonservative = {
 
 static int __init cpufreq_gov_dbs_init(void)
 {
-	dbs_wq = alloc_workqueue("ktoonservativeq_dbs_wq", WQ_HIGHPRI, 0);
-	if (!dbs_wq) {
-		printk(KERN_ERR "Failed to create ktoonservativeq_dbs_wq workqueue\n");
-		return -EFAULT;
-	}
-
 	INIT_WORK(&hotplug_offline_work, hotplug_offline_work_fn);
 	INIT_WORK(&hotplug_online_work, hotplug_online_work_fn);
 	
@@ -1594,8 +1312,8 @@ static int __init cpufreq_gov_dbs_init(void)
 static void __exit cpufreq_gov_dbs_exit(void)
 {
 	cpufreq_unregister_governor(&cpufreq_gov_ktoonservative);
-	destroy_workqueue(dbs_wq);
 }
+
 
 MODULE_AUTHOR("Alexander Clouter <alex@digriz.org.uk>");
 MODULE_DESCRIPTION("'cpufreq_ktoonservativeq' - A dynamic cpufreq governor for "
