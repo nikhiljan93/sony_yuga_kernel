@@ -363,14 +363,11 @@ struct rq {
 #endif
 	int skip_clock_update;
 
-<<<<<<< HEAD
-=======
 	/* time-based average load */
 	u64 nr_last_stamp;
 	unsigned int ave_nr_running;
 	seqcount_t ave_seqcnt;
 
->>>>>>> bfadd6a... scheduler: Re-compute time-average nr_running on read
 	/* capture load from *all* tasks on this cpu: */
 	struct load_weight load;
 	unsigned long nr_load_updates;
@@ -923,11 +920,6 @@ extern void cpuacct_charge(struct task_struct *tsk, u64 cputime);
 static inline void cpuacct_charge(struct task_struct *tsk, u64 cputime) {}
 #endif
 
-<<<<<<< HEAD
-static inline void inc_nr_running(struct rq *rq)
-{
-	sched_update_nr_prod(cpu_of(rq), rq->nr_running, true);
-=======
 /* 27 ~= 134217728ns = 134.2ms
  * 26 ~=  67108864ns =  67.1ms
  * 25 ~=  33554432ns =  33.5ms
