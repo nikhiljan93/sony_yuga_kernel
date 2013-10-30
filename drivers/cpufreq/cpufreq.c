@@ -53,6 +53,7 @@ struct cpufreq_cpu_save_data {
 };
 static DEFINE_PER_CPU(struct cpufreq_cpu_save_data, cpufreq_policy_save);
 #endif
+DEFINE_PER_CPU(int, cpufreq_init_done);
 static DEFINE_SPINLOCK(cpufreq_driver_lock);
 
 /*
@@ -1151,6 +1152,7 @@ static int cpufreq_add_dev(struct device *dev, struct subsys_interface *sif)
 	kobject_uevent(&policy->kobj, KOBJ_ADD);
 	module_put(cpufreq_driver->owner);
 	pr_debug("initialization complete\n");
+	per_cpu(cpufreq_init_done, cpu) = 1;
 
 	return 0;
 
