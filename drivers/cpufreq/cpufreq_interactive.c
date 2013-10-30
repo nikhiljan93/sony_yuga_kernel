@@ -404,7 +404,7 @@ static void cpufreq_interactive_timer(unsigned long data)
 	do_div(cputime_speedadj, delta_time);
 	loadadjfreq = (unsigned int)cputime_speedadj * 100;
 	cpu_load = loadadjfreq / pcpu->target_freq;
-	boosted = boost_val || now < boostpulse_endtime || mako_boosted;
+	boosted = boost_val || now < boostpulse_endtime;
 
 	pcpu->cpu_load = cpu_load;
 
@@ -625,8 +625,6 @@ static void cpufreq_interactive_boost(void)
 	int boostcount = 0;
 	unsigned long flags;
 	struct cpufreq_interactive_cpuinfo *pcpu;
-
-	hotplug_boostpulse();
 
 	spin_lock_irqsave(&speedchange_cpumask_lock, flags);
 

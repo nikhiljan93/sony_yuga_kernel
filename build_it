@@ -13,9 +13,9 @@ if [ -f arch/arm/boot/zImage ]
 then
 
 ### copy zImage
-cp arch/arm/boot/zImage ../gbuild/.
+cp arch/arm/boot/zImage ../build/.
 
-cd ../gbuild/
+cd ../build/
 
-/home/nik/android/gbuild/makeit.sh
+/home/nik/android/build/makeit.sh
 fi
