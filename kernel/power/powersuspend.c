@@ -22,7 +22,7 @@
 #define MAJOR_VERSION	1
 #define MINOR_VERSION	0
 
-struct workqueue_struct *suspend_work_queue;
+struct workqueue_struct *suspend_work_queue_n5;
 
 static DEFINE_MUTEX(power_suspend_lock);
 static LIST_HEAD(power_suspend_handlers);
@@ -114,10 +114,10 @@ static void set_power_suspend_state(int new_state)
 	old_sleep = state;
 	if (!old_sleep && new_state == 1) {
 		state = new_state;
-		queue_work(suspend_work_queue, &power_suspend_work);
+		queue_work(suspend_work_queue_n5, &power_suspend_work);
 	} else if (!old_sleep || new_state == 0) {
 		state = new_state;
-		queue_work(suspend_work_queue, &power_resume_work);
+		queue_work(suspend_work_queue_n5, &power_resume_work);
 	}
 	spin_unlock_irqrestore(&state_lock, irqflags);
 }
@@ -193,9 +193,9 @@ static int __init power_suspend_init(void)
                 return -ENOMEM;
         }
 
-	suspend_work_queue = create_singlethread_workqueue("p-suspend");
+	suspend_work_queue_n5 = create_singlethread_workqueue("p-suspend");
 
-	if (suspend_work_queue == NULL) {
+	if (suspend_work_queue_n5 == NULL) {
 		return -ENOMEM;
 	}
 	return 0;
@@ -206,7 +206,7 @@ static void __exit power_suspend_exit(void)
 	if (power_suspend_kobj != NULL)
 		kobject_put(power_suspend_kobj);
 
-	destroy_workqueue(suspend_work_queue);
+	destroy_workqueue(suspend_work_queue_n5);
 } 
 
 core_initcall(power_suspend_init);
