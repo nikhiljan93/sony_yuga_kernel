@@ -94,8 +94,8 @@
 #define MSM_PMEM_AUDIO_SIZE        0x4CF000
 #ifdef CONFIG_FB_MSM_HDMI_AS_PRIMARY
 #define MSM_PMEM_SIZE 0x4000000 /* 64 Mbytes */
-#else
-#define MSM_PMEM_SIZE 0x4000000 /* 64 Mbytes */
+//#else
+//#define MSM_PMEM_SIZE 0x4000000 /* 64 Mbytes */
 #endif
 
 #ifdef CONFIG_MSM_MULTIMEDIA_USE_ION

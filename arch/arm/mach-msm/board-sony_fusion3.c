@@ -232,9 +232,9 @@
 /* Section: Vibrator */
 #if defined(CONFIG_VIBRATOR_LC898300)
 struct lc898300_vib_cmd lc898300_vib_cmd_data = {
-	.vib_cmd_intensity = VIB_CMD_PWM_10_15,
+	.vib_cmd_intensity = VIB_CMD_PWM_12_15,
 	.vib_cmd_resonance = VIB_CMD_FREQ_150,
-	.vib_cmd_startup   = VIB_CMD_STTIME_5,
+	.vib_cmd_startup   = VIB_CMD_STTIME_3,
 	.vib_cmd_brake     = VIB_CMD_ATBR | VIB_CMD_BRTIME_2 |
 						VIB_CMD_BRPWR_15_15,
 	.vib_cmd_stops     = VIB_CMD_ATSNUM_8_10 | VIB_CMD_ATSOFF,
@@ -1464,10 +1464,10 @@ static struct wcd9xxx_pdata apq8064_tabla_platform_data = {
 	.num_irqs = NR_WCD9XXX_IRQS,
 	.reset_gpio = PM8921_GPIO_PM_TO_SYS(34),
 	.micbias = {
-		.ldoh_v = TABLA_LDOH_2P85_V,
-		.cfilt1_mv = 2700,
-		.cfilt2_mv = 2700,
-		.cfilt3_mv = 2700,
+		.ldoh_v = TABLA_LDOH_2P35_V,
+		.cfilt1_mv = 2200,
+		.cfilt2_mv = 2200,
+		.cfilt3_mv = 2200,
 		.bias1_cfilt_sel = TABLA_CFILT2_SEL,
 		.bias2_cfilt_sel = TABLA_CFILT2_SEL,
 		.bias3_cfilt_sel = TABLA_CFILT2_SEL,
@@ -1535,10 +1535,10 @@ static struct wcd9xxx_pdata apq8064_tabla20_platform_data = {
 	.num_irqs = NR_WCD9XXX_IRQS,
 	.reset_gpio = PM8921_GPIO_PM_TO_SYS(34),
 	.micbias = {
-		.ldoh_v = TABLA_LDOH_2P85_V,
-		.cfilt1_mv = 2700,
-		.cfilt2_mv = 2700,
-		.cfilt3_mv = 2700,
+		.ldoh_v = TABLA_LDOH_2P35_V,
+		.cfilt1_mv = 2200,
+		.cfilt2_mv = 2200,
+		.cfilt3_mv = 2200,
 		.bias1_cfilt_sel = TABLA_CFILT2_SEL,
 		.bias2_cfilt_sel = TABLA_CFILT2_SEL,
 		.bias3_cfilt_sel = TABLA_CFILT2_SEL,
@@ -2028,7 +2028,7 @@ static int lp855x_setup(struct device *dev)
 		rc = -ENODEV;
 		goto err_no_vreg;
 	}
-	rc = regulator_set_voltage(lp855x_vddio_vreg, 1800000, 1800000);
+	rc = regulator_set_voltage(lp855x_vddio_vreg, 1400000, 1400000);
 	if (rc) {
 		dev_err(dev, "failed to set voltage '%s'\n", LP855X_IO_VREG_ID);
 		goto err_set_volt;
@@ -2039,7 +2039,7 @@ static int lp855x_setup(struct device *dev)
 		rc = -ENODEV;
 		goto err_no_als_vreg;
 	}
-	rc = regulator_set_voltage(lp855x_als_vreg, 2850000, 2850000);
+	rc = regulator_set_voltage(lp855x_als_vreg, 2450000, 2450000);
 	if (rc) {
 		dev_err(dev, "failed to set voltage '%s'\n",
 				LP855X_ALS_VREG_ID);
@@ -2159,14 +2159,14 @@ struct as3676_platform_data as3676_platform_data = {
 	.leds[0] = {
 		.name = "lcd-backlight_1",
 		.on_charge_pump = 0,
-		.max_current_uA = 19950,
-		.startup_current_uA = 19950,
+		.max_current_uA = 18950,
+		.startup_current_uA = 18950,
 	},
 	.leds[1] = {
 		.name = "lcd-backlight_2",
 		.on_charge_pump = 0,
-		.max_current_uA = 19950,
-		.startup_current_uA = 19950,
+		.max_current_uA = 18950,
+		.startup_current_uA = 18950,
 	},
 	.leds[2] = {
 		.name = "led3-not-connected",
@@ -2263,7 +2263,7 @@ static struct lm3560_platform_data lm3560_platform_data = {
 	.privacy_terminate	= LM3560_PRIVACY_MODE_TURN_BACK,
 	.privacy_led_nums	= 1,
 	.privacy_blink_period	= 0, /* No bliking */
-	.current_limit		= 2300000, /* uA */
+	.current_limit		= 2400000, /* uA */
 	.flash_sync		= LM3560_SYNC_ON,
 	.strobe_polarity	= LM3560_STROBE_POLARITY_HIGH,
 	.ledintc_pin_setting	= LM3560_LEDINTC_NTC_THERMISTOR_INPUT,

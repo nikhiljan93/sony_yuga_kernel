@@ -429,7 +429,7 @@ static int calculate_vdd_dig(const struct acpu_level *tgt)
 		   max(l2_pll_vdd_dig, cpu_pll_vdd_dig));
 }
 
-static bool enable_boost = true;
+static bool enable_boost = false;
 module_param_named(boost, enable_boost, bool, S_IRUGO | S_IWUSR);
 
 static int calculate_vdd_core(const struct acpu_level *tgt)
@@ -928,8 +928,8 @@ static void __init bus_init(const struct l2_level *l2_level)
 
 #ifdef CONFIG_CPU_VOLTAGE_TABLE
 
-#define HFPLL_MIN_VDD		 800000
-#define HFPLL_MAX_VDD		1350000
+#define HFPLL_MIN_VDD		 700000
+#define HFPLL_MAX_VDD		1450000
 
 ssize_t acpuclk_get_vdd_levels_str(char *buf) {
 

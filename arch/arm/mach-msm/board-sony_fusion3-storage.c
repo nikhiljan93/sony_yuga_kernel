@@ -45,15 +45,15 @@ static struct msm_mmc_reg_data mmc_vdd_reg_data[MAX_SDCC_CONTROLLER] = {
 		.low_vol_level = 2950000,
 		.always_on = 1,
 		.lpm_sup = 1,
-		.lpm_uA = 9000,
-		.hpm_uA = 200000, /* 200mA */
+		.lpm_uA = 4500,
+		.hpm_uA = 100000, /* 200mA */
 	},
 	/* SDCC3 : External card slot connected */
 	[SDCC3] = {
 		.name = "sdc_vdd",
 		.high_vol_level = 2950000,
 		.low_vol_level = 2950000,
-		.hpm_uA = 800000, /* 800mA */
+		.hpm_uA = 400000, /* 800mA */
 	}
 };
 
@@ -65,7 +65,7 @@ static struct msm_mmc_reg_data mmc_vdd_io_reg_data[MAX_SDCC_CONTROLLER] = {
 		.always_on = 1,
 		.high_vol_level = 1800000,
 		.low_vol_level = 1800000,
-		.hpm_uA = 200000, /* 200mA */
+		.hpm_uA = 100000, /* 200mA */
 	},
 	/* SDCC3 : External card slot connected */
 	[SDCC3] = {
@@ -75,13 +75,13 @@ static struct msm_mmc_reg_data mmc_vdd_io_reg_data[MAX_SDCC_CONTROLLER] = {
 		.always_on = 1,
 		.lpm_sup = 1,
 		/* Max. Active current required is 16 mA */
-		.hpm_uA = 16000,
+		.hpm_uA = 8000,
 		/*
 		 * Sleep current required is ~300 uA. But min. vote can be
 		 * in terms of mA (min. 1 mA). So let's vote for 2 mA
 		 * during sleep.
 		 */
-		.lpm_uA = 2000,
+		.lpm_uA = 1000,
 	}
 };
 
