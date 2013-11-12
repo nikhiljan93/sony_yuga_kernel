@@ -27,14 +27,13 @@
 #include <linux/input.h>
 #include <linux/workqueue.h>
 #include <linux/slab.h>
+#ifdef CONFIG_EARLYSUSPEND
+#include <linux/earlysuspend.h>
+#endif
 #include <linux/rq_stats.h>
 
 #include <linux/syscalls.h>
 #include <linux/highuid.h>
-
-#ifdef CONFIG_POWERSUSPEND
-#include <linux/powersuspend.h>
-#endif
 
 #define INTELLIDEMAND_MAJOR_VERSION	4
 #define INTELLIDEMAND_MINOR_VERSION	4
@@ -58,12 +57,12 @@
 #define DEFAULT_FREQ_BOOST_TIME			(4000000)
 #define DEF_SAMPLING_RATE			(50000)
 #define BOOSTED_SAMPLING_RATE			(15000)
-#define DBS_INPUT_EVENT_MIN_FREQ		(1036800)
-#define DBS_SYNC_FREQ				(729600)
-#define DBS_OPTIMAL_FREQ			(1574400)
+#define DBS_INPUT_EVENT_MIN_FREQ		(1026000)
+#define DBS_SYNC_FREQ				(702000)
+#define DBS_OPTIMAL_FREQ			(1242000)
 
 #ifdef CONFIG_CPUFREQ_ID_PERFLOCK
-#define DBS_PERFLOCK_MIN_FREQ			(576000)
+#define DBS_PERFLOCK_MIN_FREQ			(594000)
 #endif
 
 static u64 freq_boosted_time;
@@ -191,8 +190,8 @@ static struct dbs_tuners {
 	.sync_freq = DBS_SYNC_FREQ,
 	.optimal_freq = DBS_OPTIMAL_FREQ,
 	.freq_boost_time = DEFAULT_FREQ_BOOST_TIME,
-	.boostfreq = 1267200,
-	.two_phase_freq = 1728000,
+	.boostfreq = 1350000,
+	.two_phase_freq = 1242000,
 };
 
 static inline cputime64_t get_cpu_idle_time_jiffy(unsigned int cpu,
@@ -1048,8 +1047,8 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 				(dbs_tuners_ins.up_threshold -
 				 dbs_tuners_ins.down_differential);
 
-		if (dbs_tuners_ins.boosted &&
-				freq_next < dbs_tuners_ins.boostfreq) {
+		if ((dbs_tuners_ins.boosted || mako_boosted)
+				&& freq_next < dbs_tuners_ins.boostfreq) {
 			freq_next = dbs_tuners_ins.boostfreq;
 		}
 
@@ -1235,7 +1234,9 @@ static void dbs_refresh_callback(struct work_struct *work)
 
 	if (policy->cur < DBS_INPUT_EVENT_MIN_FREQ) {
 #if 0
-		pr_info("%s: set cpufreq to DBS_INPUT_EVENT_MIN_FREQ(%d) due to input events!\n", __func__, DBS_INPUT_EVENT_MIN_FREQ);
+		pr_info("%s: set cpufreq to DBS_INPUT_EVENT_MIN_FREQ(%d) \
+			directly due to input events!\n", __func__, \
+			DBS_INPUT_EVENT_MIN_FREQ);
 #endif
 		/*
 		 * Arch specific cpufreq driver may fail.
@@ -1256,7 +1257,6 @@ bail_acq_sema_failed:
 }
 
 static unsigned int enable_dbs_input_event = 1;
-
 static void dbs_input_event(struct input_handle *handle, unsigned int type,
 		unsigned int code, int value)
 {
@@ -1276,9 +1276,6 @@ static void dbs_input_event(struct input_handle *handle, unsigned int type,
 			sampling_rate_boosted = 1;
 		}
 
-		/* debug mesg */
-		//pr_info("screen touched!\n");
-
 		for_each_online_cpu(i)
 			queue_work_on(i, input_wq, &per_cpu(dbs_refresh_work, i).work);
 	}
@@ -1288,7 +1285,6 @@ static void dbs_input_event(struct input_handle *handle, unsigned int type,
 static int input_dev_filter(const char *input_dev_name)
 {
 	if (strstr(input_dev_name, "touchscreen") ||
-		strstr(input_dev_name, "sec_touchscreen") ||
 		strstr(input_dev_name, "-keypad") ||
 		strstr(input_dev_name, "-nav") ||
 		strstr(input_dev_name, "-oj")) {
@@ -1470,8 +1466,8 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 	return 0;
 }
 
-#ifdef CONFIG_POWERSUSPEND
-static void cpufreq_intellidemand_power_suspend(struct power_suspend *h)
+#ifdef CONFIG_EARLYSUSPEND
+static void cpufreq_intellidemand_early_suspend(struct early_suspend *h)
 {
 	mutex_lock(&dbs_mutex);
 	stored_sampling_rate = dbs_tuners_ins.sampling_rate;
@@ -1480,7 +1476,7 @@ static void cpufreq_intellidemand_power_suspend(struct power_suspend *h)
 	mutex_unlock(&dbs_mutex);
 }
 
-static void cpufreq_intellidemand_power_resume(struct power_suspend *h)
+static void cpufreq_intellidemand_late_resume(struct early_suspend *h)
 {
 	mutex_lock(&dbs_mutex);
 	dbs_tuners_ins.sampling_rate = stored_sampling_rate;
@@ -1488,9 +1484,10 @@ static void cpufreq_intellidemand_power_resume(struct power_suspend *h)
 	mutex_unlock(&dbs_mutex);
 }
 
-static struct power_suspend cpufreq_intellidemand_power_suspend_info = {
-	.suspend = cpufreq_intellidemand_power_suspend,
-	.resume = cpufreq_intellidemand_power_resume,
+static struct early_suspend cpufreq_intellidemand_early_suspend_info = {
+	.suspend = cpufreq_intellidemand_early_suspend,
+	.resume = cpufreq_intellidemand_late_resume,
+	.level = EARLY_SUSPEND_LEVEL_DISABLE_FB + 1,
 };
 #endif
 
@@ -1535,8 +1532,8 @@ static int __init cpufreq_gov_dbs_init(void)
 		dbs_work->cpu = i;
 	}
 
-#ifdef CONFIG_POWERSUSPEND
-	register_power_suspend(&cpufreq_intellidemand_power_suspend_info);
+#ifdef CONFIG_EARLYSUSPEND
+	register_early_suspend(&cpufreq_intellidemand_early_suspend_info);
 #endif
 	return cpufreq_register_governor(&cpufreq_gov_intellidemand);
 }
@@ -1551,9 +1548,8 @@ static void __exit cpufreq_gov_dbs_exit(void)
 			&per_cpu(id_cpu_dbs_info, i);
 		mutex_destroy(&this_dbs_info->timer_mutex);
 	}
-
-#ifdef CONFIG_POWERSUSPEND
-	unregister_power_suspend(&cpufreq_intellidemand_power_suspend_info);
+#ifdef CONFIG_EARLYSUSPEND
+	unregister_early_suspend(&cpufreq_intellidemand_early_suspend_info);
 #endif
 	destroy_workqueue(input_wq);
 }
