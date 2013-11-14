@@ -377,7 +377,7 @@ CFLAGS_A15 = -march=armv7-a -mtune=cortex-a15 -mfpu=neon-vfpv4 -funsafe-math-opt
 CFLAGS_MODULO = -fmodulo-sched -fmodulo-sched-allow-regmoves
 KERNEL_MODS  = $(CFLAGS_A15) $(CFLAGS_MODULO)
 
-KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -Wno-array-bounds -Wno-maybe-uninitialized -Wno-uninitialized -Wno-unused-variable -Wno-sizeof-pointer-memaccess \
+KBUILD_CFLAGS   := -Wall -Wundef -Wno-strict-prototypes -Wno-trigraphs -Wno-array-bounds -Wno-maybe-uninitialized -Wno-uninitialized -Wno-unused-variable -Wno-sizeof-pointer-memaccess \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \

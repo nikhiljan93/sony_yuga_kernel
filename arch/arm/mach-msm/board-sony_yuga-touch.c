@@ -66,6 +66,6 @@ struct evgen_block *clearpad_evgen_block_get(u8 module_id, u8 rev)
 }
 
 struct synaptics_easy_wakeup_config clearpad_easy_wakeup_config = {
-	.gesture_enable = false,
+	.gesture_enable = true,
 	.large_panel = false,
 };
