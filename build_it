@@ -13,7 +13,11 @@ if [ -f arch/arm/boot/zImage ]
 then
 
 ### copy zImage
-cp arch/arm/boot/zImage ../build/.
+cp arch/arm/boot/zImage ../build/
+
+cp drivers/exfat/exfat_core.ko ../build/boot.img-ramdisk/lib/
+cp drivers/exfat/exfat_fs.ko ../build/boot.img-ramdisk/lib/
+cp drivers/hid/hid-sony.ko ../build/boot.img-ramdisk/lib/
 
 cd ../build/
 

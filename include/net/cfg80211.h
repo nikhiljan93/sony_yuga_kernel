@@ -3482,6 +3482,15 @@ void cfg80211_ft_event(struct net_device *netdev,
 		       struct cfg80211_ft_event_params *ft_event);
 
 
+
+/**
+ * cfg80211_ap_stopped - notify userspace that AP mode has been
+ * stopped because of an exception at the driver.
+ * @netdev: network device
+ * @ft_event: IE information
+ */
+void cfg80211_ap_stopped(struct net_device *netdev, gfp_t gfp);
+
 /* Logging, debugging and troubleshooting/diagnostic helpers. */
 
 /* wiphy_printk helpers, similar to dev_printk */

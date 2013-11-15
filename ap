@@ -1,0 +1,102 @@
+From 88866beee825e2bc76204f6378727a79388d81ff Mon Sep 17 00:00:00 2001
+From: Sameer Thalappil <sameert@qca.qualcomm.com>
+Date: Tue, 13 Aug 2013 18:05:40 -0700
+Subject: [PATCH] cfg80211: Add AP stopped interface
+
+AP stopped interface can be used to indicate that the AP mode has
+stopped functioning, WLAN driver may have encountered errors that has
+forced the driver to stop the AP mode.
+
+Signed-off-by: Sameer Thalappil <sameert@qca.qualcomm.com>
+---
+ include/net/cfg80211.h |    9 +++++++++
+ net/wireless/core.c    |    1 +
+ net/wireless/nl80211.c |   13 +++++++++++++
+ net/wireless/trace.h   |   15 +++++++++++++++
+ 4 files changed, 38 insertions(+), 0 deletions(-)
+
+diff --git a/include/net/cfg80211.h b/include/net/cfg80211.h
+index b7495c7..a344e8a 100644
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -4375,6 +4375,15 @@ void cfg80211_report_wowlan_wakeup(struct wireless_dev *wdev,
+  */
+ void cfg80211_crit_proto_stopped(struct wireless_dev *wdev, gfp_t gfp);
+ 
++
++/**
++ * cfg80211_ap_stopped - notify userspace that AP mode has been
++ * stopped because of an exception at the driver.
++ * @netdev: network device
++ * @ft_event: IE information
++ */
++void cfg80211_ap_stopped(struct net_device *netdev, gfp_t gfp);
++
+ /* Logging, debugging and troubleshooting/diagnostic helpers. */
+ 
+ /* wiphy_printk helpers, similar to dev_printk */
+diff --git a/net/wireless/core.c b/net/wireless/core.c
+index 6715396..165ffca 100644
+--- a/net/wireless/core.c
++++ b/net/wireless/core.c
+@@ -776,6 +776,7 @@ void cfg80211_leave(struct cfg80211_registered_device *rdev,
+ 	case NL80211_IFTYPE_AP:
+ 	case NL80211_IFTYPE_P2P_GO:
+ 		cfg80211_stop_ap(rdev, dev);
++		cfg80211_ap_stopped(dev, GFP_KERNEL);
+ 		break;
+ 	default:
+ 		break;
+diff --git a/net/wireless/nl80211.c b/net/wireless/nl80211.c
+index adf1e98..308e333 100644
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -11241,6 +11241,19 @@ void cfg80211_crit_proto_stopped(struct wireless_dev *wdev, gfp_t gfp)
+ }
+ EXPORT_SYMBOL(cfg80211_crit_proto_stopped);
+ 
++
++void cfg80211_ap_stopped(struct net_device *netdev, gfp_t gfp)
++{
++	struct wireless_dev *wdev = netdev->ieee80211_ptr;
++	struct cfg80211_registered_device *rdev = wiphy_to_dev(wdev->wiphy);
++
++	trace_cfg80211_ap_stopped(wdev->wiphy, netdev);
++
++	nl80211_send_mlme_event(rdev, netdev, NULL, 0,
++			NL80211_CMD_STOP_AP, gfp);
++}
++EXPORT_SYMBOL(cfg80211_ap_stopped);
++
+ /* initialisation/exit functions */
+ 
+ int nl80211_init(void)
+diff --git a/net/wireless/trace.h b/net/wireless/trace.h
+index f0ebdcd..dc4c0f9 100644
+--- a/net/wireless/trace.h
++++ b/net/wireless/trace.h
+@@ -2557,6 +2557,21 @@ TRACE_EVENT(cfg80211_ft_event,
+ 		  WIPHY_PR_ARG, NETDEV_PR_ARG, MAC_PR_ARG(target_ap))
+ );
+ 
++TRACE_EVENT(cfg80211_ap_stopped,
++	TP_PROTO(struct wiphy *wiphy, struct net_device *netdev),
++	TP_ARGS(wiphy, netdev),
++	TP_STRUCT__entry(
++		WIPHY_ENTRY
++		NETDEV_ENTRY
++	),
++	TP_fast_assign(
++		WIPHY_ASSIGN;
++		NETDEV_ASSIGN;
++	),
++	TP_printk(WIPHY_PR_FMT ", " NETDEV_PR_FMT,
++		WIPHY_PR_ARG, NETDEV_PR_ARG)
++);
++
+ #endif /* !__RDEV_OPS_TRACE || TRACE_HEADER_MULTI_READ */
+ 
+ #undef TRACE_INCLUDE_PATH
+-- 
+1.7.8.3
+
