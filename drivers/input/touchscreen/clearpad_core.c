@@ -1939,6 +1939,7 @@ static int synaptics_clearpad_handle_gesture(struct synaptics_clearpad *this)
 		#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_TAP2WAKE
      		if(dt2w_switch == 1)
         	dt2w_func();
+		synaptics_clearpad_reset_power(this);
      		#endif 
 		break;
 	case XY_LPWG_STATUS_SWIPE_DETECTED:
@@ -1952,6 +1953,7 @@ static int synaptics_clearpad_handle_gesture(struct synaptics_clearpad *this)
 		#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_TAP2WAKE
      		if(s2w_switch == 1)
         	dt2w_func();
+		synaptics_clearpad_reset_power(this);
      		#endif
 		break;
 	default:
