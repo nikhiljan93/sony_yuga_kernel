@@ -48,8 +48,8 @@ static struct scalable scalable[] __initdata = {
 		.sec_clk_sel = 2,
 		.l2cpmr_iaddr = 0x4501,
 		.vreg[VREG_CORE] = { "krait0", 1450000 },
-		.vreg[VREG_MEM]  = { "krait0_mem", 1175000 },
-		.vreg[VREG_DIG]  = { "krait0_dig", 1175000 },
+		.vreg[VREG_MEM]  = { "krait0_mem", 1200000 },
+		.vreg[VREG_DIG]  = { "krait0_dig", 1200000 },
 		.vreg[VREG_HFPLL_A] = { "krait0_hfpll", 1800000 },
 	},
 	[CPU1] = {
@@ -59,8 +59,8 @@ static struct scalable scalable[] __initdata = {
 		.sec_clk_sel = 2,
 		.l2cpmr_iaddr = 0x5501,
 		.vreg[VREG_CORE] = { "krait1", 1450000 },
-		.vreg[VREG_MEM]  = { "krait1_mem", 1175000 },
-		.vreg[VREG_DIG]  = { "krait1_dig", 1175000 },
+		.vreg[VREG_MEM]  = { "krait1_mem", 1200000 },
+		.vreg[VREG_DIG]  = { "krait1_dig", 1200000 },
 		.vreg[VREG_HFPLL_A] = { "krait1_hfpll", 1800000 },
 	},
 	[CPU2] = {
@@ -70,8 +70,8 @@ static struct scalable scalable[] __initdata = {
 		.sec_clk_sel = 2,
 		.l2cpmr_iaddr = 0x6501,
 		.vreg[VREG_CORE] = { "krait2", 1450000 },
-		.vreg[VREG_MEM]  = { "krait2_mem", 1175000 },
-		.vreg[VREG_DIG]  = { "krait2_dig", 1175000 },
+		.vreg[VREG_MEM]  = { "krait2_mem", 1200000 },
+		.vreg[VREG_DIG]  = { "krait2_dig", 1200000 },
 		.vreg[VREG_HFPLL_A] = { "krait2_hfpll", 1800000 },
 	},
 	[CPU3] = {
@@ -81,8 +81,8 @@ static struct scalable scalable[] __initdata = {
 		.sec_clk_sel = 2,
 		.l2cpmr_iaddr = 0x7501,
 		.vreg[VREG_CORE] = { "krait3", 1450000 },
-		.vreg[VREG_MEM]  = { "krait3_mem", 1175000 },
-		.vreg[VREG_DIG]  = { "krait3_dig", 1175000 },
+		.vreg[VREG_MEM]  = { "krait3_mem", 1200000 },
+		.vreg[VREG_DIG]  = { "krait3_dig", 1200000 },
 		.vreg[VREG_HFPLL_A] = { "krait3_hfpll", 1800000 },
 	},
 	[L2] = {
@@ -106,7 +106,7 @@ static struct msm_bus_paths bw_level_tbl[] __initdata = {
 	[3] = BW_MBPS(2128), /* At least 266 MHz on bus. */
 	[4] = BW_MBPS(3200), /* At least 400 MHz on bus. */
 	[5] = BW_MBPS(4264), /* At least 533 MHz on bus. */
-	[6] = BW_MBPS(4600), /* At least 600 MHz on bus. */
+	[6] = BW_MBPS(4800), /* At least 600 MHz on bus. */
 };
 
 static struct msm_bus_scale_pdata bus_scale_data __initdata = {
@@ -135,8 +135,8 @@ static struct l2_level l2_freq_tbl[] __initdata = {
 	[15] = { { 1188000, HFPLL, 1, 0x2C }, 1150000, 1150000, 5 },
 #ifdef CONFIG_CPU_OVERCLOCK
 	[16] = { { 1242000, HFPLL, 1, 0x2E }, 1175000, 1175000, 6 },
-	[17] = { { 1296000, HFPLL, 1, 0x30 }, 1175000, 1175000, 6 },
-	[18] = { { 1350000, HFPLL, 1, 0x32 }, 1175000, 1175000, 6 },
+	[17] = { { 1296000, HFPLL, 1, 0x30 }, 1200000, 1200000, 6 },
+	[18] = { { 1350000, HFPLL, 1, 0x32 }, 1225000, 1225000, 6 },
 #endif
 	{ }
 };

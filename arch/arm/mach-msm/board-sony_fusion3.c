@@ -232,9 +232,9 @@
 /* Section: Vibrator */
 #if defined(CONFIG_VIBRATOR_LC898300)
 struct lc898300_vib_cmd lc898300_vib_cmd_data = {
-	.vib_cmd_intensity = VIB_CMD_PWM_12_15,
+	.vib_cmd_intensity = VIB_CMD_PWM_10_15,
 	.vib_cmd_resonance = VIB_CMD_FREQ_150,
-	.vib_cmd_startup   = VIB_CMD_STTIME_3,
+	.vib_cmd_startup   = VIB_CMD_STTIME_5,
 	.vib_cmd_brake     = VIB_CMD_ATBR | VIB_CMD_BRTIME_2 |
 						VIB_CMD_BRPWR_15_15,
 	.vib_cmd_stops     = VIB_CMD_ATSNUM_8_10 | VIB_CMD_ATSOFF,
