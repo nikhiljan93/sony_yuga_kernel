@@ -1,5 +1,5 @@
 
-CUR_TC=/home/nik/android/test/AK-linaro/4.8.2-2013.09.20130923/bin/
+CUR_TC=/home/nik/android/test/AK-linaro/4.8.3-2013.11.20131205/bin/
 
 
 ### compile kernel
