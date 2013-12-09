@@ -32,19 +32,10 @@
 #include <linux/kernel_stat.h>
 #include <asm/cputime.h>
 
-#include <linux/syscalls.h>
-#include <linux/highuid.h>
-
 #define CREATE_TRACE_POINTS
 #include <trace/events/cpufreq_interactive.h>
 
 static int active_count;
-
-extern void hotplug_boostpulse(void);
-
-/* Default boostpulse frequency */
-#define DEFAULT_BOOSTPULSE_FREQ 1350000
-#define DEFAULT_BOOSTPULSE_DURATION 1500000
 
 struct cpufreq_interactive_cpuinfo {
 	struct timer_list cpu_timer;
@@ -62,7 +53,6 @@ struct cpufreq_interactive_cpuinfo {
 	u64 hispeed_validate_time;
 	struct rw_semaphore enable_sem;
 	int governor_enabled;
-	int cpu_load;
 };
 
 static DEFINE_PER_CPU(struct cpufreq_interactive_cpuinfo, cpuinfo);
@@ -74,14 +64,14 @@ static spinlock_t speedchange_cpumask_lock;
 static struct mutex gov_lock;
 
 /* Hi speed to bump to from lo speed when load burst (default max) */
-static unsigned int hispeed_freq = DEFAULT_BOOSTPULSE_FREQ;
+static unsigned int hispeed_freq;
 
 /* Go to hi speed when CPU load at or above this value. */
-#define DEFAULT_GO_HISPEED_LOAD 85
+#define DEFAULT_GO_HISPEED_LOAD 99
 static unsigned long go_hispeed_load = DEFAULT_GO_HISPEED_LOAD;
 
 /* Target load.  Lower values result in higher CPU speeds. */
-#define DEFAULT_TARGET_LOAD 85
+#define DEFAULT_TARGET_LOAD 90
 static unsigned int default_target_loads[] = {DEFAULT_TARGET_LOAD};
 static spinlock_t target_loads_lock;
 static unsigned int *target_loads = default_target_loads;
@@ -113,7 +103,7 @@ static int nabove_hispeed_delay = ARRAY_SIZE(default_above_hispeed_delay);
 /* Non-zero means indefinite speed boost active */
 static int boost_val;
 /* Duration of a boot pulse in usecs */
-static int boostpulse_duration_val = DEFAULT_BOOSTPULSE_DURATION;
+static int boostpulse_duration_val = DEFAULT_MIN_SAMPLE_TIME;
 /* End time of boost pulse in ktime converted to usecs */
 static u64 boostpulse_endtime;
 
@@ -124,20 +114,20 @@ static u64 boostpulse_endtime;
 #define DEFAULT_TIMER_SLACK (4 * DEFAULT_TIMER_RATE)
 static int timer_slack_val = DEFAULT_TIMER_SLACK;
 
-static bool io_is_busy = true;
+static bool io_is_busy;
 
-#define  AID_SYSTEM  (1000)
-static void dbs_chown(void)
-{
-  int ret;
+static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
+		unsigned int event);
 
-  ret =
-  sys_chown("/sys/devices/system/cpu/cpufreq/interactive/boostpulse",
-    low2highuid(AID_SYSTEM), low2highgid(0));
-  if (ret)
-    pr_err("sys_chown: boostpulse error: %d", ret);
-}
-
+#ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE
+static
+#endif
+struct cpufreq_governor cpufreq_gov_interactive = {
+	.name = "interactive",
+	.governor = cpufreq_governor_interactive,
+	.max_transition_latency = 10000000,
+	.owner = THIS_MODULE,
+};
 
 static inline cputime64_t get_cpu_idle_time_jiffy(unsigned int cpu,
 						  cputime64_t *wall)
@@ -406,8 +396,6 @@ static void cpufreq_interactive_timer(unsigned long data)
 	cpu_load = loadadjfreq / pcpu->target_freq;
 	boosted = boost_val || now < boostpulse_endtime;
 
-	pcpu->cpu_load = cpu_load;
-
 	if (cpu_load >= go_hispeed_load || boosted) {
 		if (pcpu->target_freq < hispeed_freq) {
 			new_freq = hispeed_freq;
@@ -599,8 +587,6 @@ static int cpufreq_interactive_speedchange_task(void *data)
 
 				if (pjcpu->target_freq > max_freq)
 					max_freq = pjcpu->target_freq;
-
-				cpufreq_notify_utilization(pcpu->policy, (pcpu->cpu_load * pcpu->policy->cur) / pcpu->policy->cpuinfo.max_freq);
 			}
 
 			if (max_freq != pcpu->policy->cur)
@@ -622,7 +608,6 @@ static void cpufreq_interactive_boost(void)
 {
 	int i;
 	int anyboost = 0;
-	int boostcount = 0;
 	unsigned long flags;
 	struct cpufreq_interactive_cpuinfo *pcpu;
 
@@ -637,7 +622,6 @@ static void cpufreq_interactive_boost(void)
 			pcpu->hispeed_validate_time =
 				ktime_to_us(ktime_get());
 			anyboost = 1;
-			boostcount++;
 		}
 
 		/*
@@ -647,9 +631,6 @@ static void cpufreq_interactive_boost(void)
 
 		pcpu->floor_freq = hispeed_freq;
 		pcpu->floor_validate_time = ktime_to_us(ktime_get());
-
-                if (boostcount > 1)
-                  break;
 	}
 
 	spin_unlock_irqrestore(&speedchange_cpumask_lock, flags);
@@ -1091,9 +1072,10 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 
 	switch (event) {
 	case CPUFREQ_GOV_START:
-		mutex_lock(&gov_lock);
+		if (!cpu_online(policy->cpu))
+			return -EINVAL;
 
-		dbs_chown();
+		mutex_lock(&gov_lock);
 
 		freq_table =
 			cpufreq_frequency_get_table(policy->cpu);
@@ -1111,8 +1093,6 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 			pcpu->hispeed_validate_time =
 				pcpu->floor_validate_time;
 			down_write(&pcpu->enable_sem);
-			del_timer_sync(&pcpu->cpu_timer);
-			del_timer_sync(&pcpu->cpu_slack_timer);
 			cpufreq_interactive_timer_start(j);
 			pcpu->governor_enabled = 1;
 			up_write(&pcpu->enable_sem);
@@ -1203,16 +1183,6 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 	}
 	return 0;
 }
-
-#ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE
-static
-#endif
-struct cpufreq_governor cpufreq_gov_interactive = {
-        .name = "interactive",
-        .governor = cpufreq_governor_interactive,
-        .max_transition_latency = 10000000,
-        .owner = THIS_MODULE,
-};
 
 static void cpufreq_interactive_nop_timer(unsigned long data)
 {
