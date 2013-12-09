@@ -44,23 +44,7 @@ CONFIG_IRQ_WORK=y
 CONFIG_EXPERIMENTAL=y
 CONFIG_INIT_ENV_ARG_LIMIT=32
 CONFIG_CROSS_COMPILE=""
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-CONFIG_LOCALVERSION="XzK-v13"
-=======
-CONFIG_LOCALVERSION="XzK-v13b1"
->>>>>>> 53525de... ----> 3.4.71
-=======
-CONFIG_LOCALVERSION="XzK-v13b2"
->>>>>>> 14f2f05... XzK-v14 beta
-=======
-CONFIG_LOCALVERSION="XzK-v14b2"
->>>>>>> 3f9ef47... arm: makefile: use -mcpu=cortex-a15 when targeting MSM Krait CPUs
-=======
-CONFIG_LOCALVERSION="XzK-v14"
->>>>>>> 0b7c6c8... Switch back to XZ Compression
+CONFIG_LOCALVERSION="XzK-v15b1"
 # CONFIG_LOCALVERSION_AUTO is not set
 CONFIG_HAVE_KERNEL_GZIP=y
 CONFIG_HAVE_KERNEL_LZMA=y
