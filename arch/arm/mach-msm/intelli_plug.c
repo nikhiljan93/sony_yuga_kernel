@@ -29,14 +29,14 @@
 #define INTELLI_PLUG_MAJOR_VERSION	2
 #define INTELLI_PLUG_MINOR_VERSION	0
 
-#define DEF_SAMPLING_MS			(250)
-#define BUSY_SAMPLING_MS		(100)
+#define DEF_SAMPLING_MS			(500)
+#define BUSY_SAMPLING_MS		(1000)
 
-#define DUAL_CORE_PERSISTENCE		15
-#define TRI_CORE_PERSISTENCE		12
-#define QUAD_CORE_PERSISTENCE		9
+#define DUAL_CORE_PERSISTENCE		9
+#define TRI_CORE_PERSISTENCE		7
+#define QUAD_CORE_PERSISTENCE		4
 
-#define BUSY_PERSISTENCE		30
+#define BUSY_PERSISTENCE		5
 
 #define RUN_QUEUE_THRESHOLD		38
 
@@ -342,19 +342,20 @@ static void intelli_plug_input_event(struct input_handle *handle,
 #ifdef DEBUG_INTELLI_PLUG
 	pr_info("intelli_plug touched!\n");
 #endif
-
-	cancel_delayed_work(&intelli_plug_work);
+	cancel_delayed_work_sync(&intelli_plug_work);
 
 	sampling_time = BUSY_SAMPLING_MS;
 	busy_persist_count = BUSY_PERSISTENCE;
 
-        schedule_delayed_work_on(0, &intelli_plug_work,
-                msecs_to_jiffies(sampling_time));
+	schedule_delayed_work_on(0, &intelli_plug_work,
+		msecs_to_jiffies(sampling_time));
 }
 
 static int input_dev_filter(const char *input_dev_name)
 {
 	if (strstr(input_dev_name, "touchscreen") ||
+		strstr(input_dev_name, "sec_touchscreen") ||
+		strstr(input_dev_name, "touch_dev") ||
 		strstr(input_dev_name, "-keypad") ||
 		strstr(input_dev_name, "-nav") ||
 		strstr(input_dev_name, "-oj")) {
@@ -431,15 +432,13 @@ int __init intelli_plug_init(void)
 	sampling_time = DEF_SAMPLING_MS;
 
 	rc = input_register_handler(&intelli_plug_input_handler);
-
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	register_early_suspend(&intelli_plug_early_suspend_struct_driver);
-#endif
-
 	INIT_DELAYED_WORK(&intelli_plug_work, intelli_plug_work_fn);
 	schedule_delayed_work_on(0, &intelli_plug_work,
 		msecs_to_jiffies(sampling_time));
 
+#ifdef CONFIG_HAS_EARLYSUSPEND
+	register_early_suspend(&intelli_plug_early_suspend_struct_driver);
+#endif
 	return 0;
 }
 
