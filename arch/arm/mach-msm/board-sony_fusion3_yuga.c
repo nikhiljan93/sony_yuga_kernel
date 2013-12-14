@@ -82,7 +82,7 @@ static int lm3533_als_power_off(struct device *dev)
 }
 
 static struct lm3533_startup_brightenss lm3533_startup_brightnesses[] = {
-				[0] = {"lm3533-lcd-bl", 32},
+				[0] = {"lm3533-lcd-bl", 64},
 				[1] = {"lm3533-red", 0},
 				[2] = { NULL, 0} };
 
@@ -91,7 +91,7 @@ struct lm3533_platform_data lm3533_pdata = {
 		[LM3533_CBNKA] = {
 			.pwm = 0, /* TDOD: set 0x3f when DBC is present */
 			.ctl = LM3533_HVA_MAP_LIN | LM3533_HVA_BR_CTL,
-			.fsc =  I_UA_TO_FSC(10200),
+			.fsc =  I_UA_TO_FSC(7200),
 			.iname = "lm3533-lcd-bl",
 		},
 		[LM3533_CBNKB] = {
@@ -102,23 +102,23 @@ struct lm3533_platform_data lm3533_pdata = {
 		},
 		[LM3533_CBNKC] = {
 			.pwm = 0,
-			.ctl = LM3533_LV_MAP_LIN | LM3533_LV_BR_CTL,
+			.ctl = LM3533_LV_MAP_EXP | LM3533_LV_BR_CTL,
 			/* 1ma in spec, but this is not possible */
-			.fsc =  I_UA_TO_FSC(2500),
+			.fsc =  I_UA_TO_FSC(5000),
 			.iname = "lm3533-red",
 		},
 		[LM3533_CBNKD] = {
 			.pwm = 0,
-			.ctl = LM3533_LV_MAP_LIN | LM3533_LV_BR_CTL,
+			.ctl = LM3533_LV_MAP_EXP | LM3533_LV_BR_CTL,
 			/* 1ma in spec, but this is not possible */
-			.fsc =  I_UA_TO_FSC(2500),
+			.fsc =  I_UA_TO_FSC(5000),
 			.iname = "lm3533-green",
 		},
 		[LM3533_CBNKE] = {
 			.pwm = 0,
-			.ctl = LM3533_LV_MAP_LIN | LM3533_LV_BR_CTL,
+			.ctl = LM3533_LV_MAP_EXP | LM3533_LV_BR_CTL,
 			/* 1ma in spec, but this is not possible */
-			.fsc =  I_UA_TO_FSC(2500),
+			.fsc =  I_UA_TO_FSC(5000),
 			.iname = "lm3533-blue",
 		},
 		[LM3533_CBNKF] = {
@@ -165,7 +165,7 @@ struct lm3533_platform_data lm3533_pdata = {
 			.bank =  LM3533_CBNKF,
 		},
 	},
-	.ovp_boost_pwm = LM3533_BOOST_500KHZ | LM3533_OVP_24V | LM3533_PWM_HIGH,
+	.ovp_boost_pwm = LM3533_BOOST_500KHZ | LM3533_OVP_16V | LM3533_PWM_HIGH,
 	.led_fault = LM3533_OPEN_DISABLED | LM3533_SHORT_DISABLED,
 	.setup = lm3533_setup,
 	.teardown = lm3533_teardown,
@@ -173,8 +173,8 @@ struct lm3533_platform_data lm3533_pdata = {
 	.power_off = lm3533_power_off,
 	.als_on = lm3533_als_power_on,
 	.als_off = lm3533_als_power_off,
-	.als_control = LM3533_ALS_143360,
-	.als_input_current = ALS_CUR_UA_TO_REG(0),
+	.als_control = LM3533_ALS_286720,
+	.als_input_current = ALS_CUR_UA_TO_REG(3),
 	.startup_brightness = lm3533_startup_brightnesses,
 };
 
