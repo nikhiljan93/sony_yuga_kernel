@@ -91,7 +91,7 @@ struct lm3533_platform_data lm3533_pdata = {
 		[LM3533_CBNKA] = {
 			.pwm = 0, /* TDOD: set 0x3f when DBC is present */
 			.ctl = LM3533_HVA_MAP_LIN | LM3533_HVA_BR_CTL,
-			.fsc =  I_UA_TO_FSC(17000),
+			.fsc =  I_UA_TO_FSC(5800),
 			.iname = "lm3533-lcd-bl",
 		},
 		[LM3533_CBNKB] = {
@@ -175,7 +175,7 @@ struct lm3533_platform_data lm3533_pdata = {
 	.als_off = lm3533_als_power_off,
 	.als_control = LM3533_ALS_286720,
 	.als_algo = LM3533_ALS1_DIRECT | LM3533_ALS2_DIRECT | LM3533_ALS3_DIRECT | LM3533_SCALER_DIRECT,
-	.als_input_current = ALS_CUR_UA_TO_REG(3),
+	.als_input_current = ALS_CUR_UA_TO_REG(1),
 	.startup_brightness = lm3533_startup_brightnesses,
 };
 
