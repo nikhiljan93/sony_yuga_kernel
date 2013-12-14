@@ -30,9 +30,9 @@
  * floor upon input event detection. This is based on changes to
  * cpufreq ondemand governor by:
  *
- * Tero Kristo <tero.kristo@xxxxxxxxx>
- * Brian Steuer <bsteuer@xxxxxxxxxxxxxx>
- * David Ng <dave@xxxxxxxxxxxxxx>
+ * Tero Kristo <tero.kristo@nokia.com>
+ * Brian Steuer <bsteuer@codeaurora.org>
+ * David Ng <dave@codeaurora.org>
  *
  * at git://codeaurora.org/kernel/msm.git tree, commits:
  *
@@ -43,7 +43,7 @@
  * 88a65c7ae04632ffee11f9fc628d7ab017c06b83
  */
 
-MODULE_AUTHOR("Antti P Miettinen <amiettinen@xxxxxxxxxx>");
+MODULE_AUTHOR("Antti P Miettinen <amiettinen@nvidia.com>");
 MODULE_DESCRIPTION("Input event CPU frequency booster");
 MODULE_LICENSE("GPL v2");
 
@@ -51,7 +51,7 @@ MODULE_LICENSE("GPL v2");
 static struct pm_qos_request qos_req;
 static struct work_struct boost;
 static struct delayed_work unboost;
-static unsigned int boost_freq = 1026000; /* kHz */
+static unsigned int boost_freq; /* kHz */
 module_param(boost_freq, uint, 0644);
 static unsigned long boost_time = 500; /* ms */
 module_param(boost_time, ulong, 0644);
@@ -61,20 +61,20 @@ static void cfb_boost(struct work_struct *w)
 {
 	cancel_delayed_work_sync(&unboost);
 	pm_qos_update_request(&qos_req, boost_freq);
-	printk("CFBoost: Input detected. Boosting for %ld msec",boost_time);
 	queue_delayed_work(cfb_wq, &unboost, msecs_to_jiffies(boost_time));
 }
 
 static void cfb_unboost(struct work_struct *w)
 {
 	printk("CFBoost: Unboosting now");
-	pm_qos_update_request(&qos_req, PM_QOS_DEFAULT_VALUE);
+   	pm_qos_update_request(&qos_req, PM_QOS_DEFAULT_VALUE);
 }
 
 static void cfb_input_event(struct input_handle *handle, unsigned int type,
 			    unsigned int code, int value)
 {
 	if (!work_pending(&boost))
+		printk("CFBoost: Input detected. Boosting for %ld msec",boost_time);
 		queue_work(cfb_wq, &boost);
 }
 
@@ -130,6 +130,52 @@ static const struct input_device_id cfb_ids[] = {
 		.evbit = { BIT_MASK(EV_REL) },
 		.keybit = {[BIT_WORD(BTN_MOUSE)] = BIT_MASK(BTN_MOUSE) },
 	},
+	/* keypad */
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_EVBIT |
+			INPUT_DEVICE_ID_MATCH_KEYBIT,
+		.evbit = { BIT_MASK(EV_KEY) },
+		.keybit = {[BIT_WORD(KEY_POWER)] = BIT_MASK(KEY_POWER) },
+	},
+	/* joystick */
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_EVBIT |
+			INPUT_DEVICE_ID_MATCH_ABSBIT,
+		.evbit = { BIT_MASK(EV_ABS) },
+		.absbit = { BIT_MASK(ABS_X) },
+	},
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_EVBIT |
+			INPUT_DEVICE_ID_MATCH_ABSBIT,
+		.evbit = { BIT_MASK(EV_ABS) },
+		.absbit = { BIT_MASK(ABS_WHEEL) },
+	},
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_EVBIT |
+			INPUT_DEVICE_ID_MATCH_ABSBIT,
+		.evbit = { BIT_MASK(EV_ABS) },
+		.absbit = { BIT_MASK(ABS_THROTTLE) },
+	},
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_EVBIT |
+			INPUT_DEVICE_ID_MATCH_KEYBIT,
+		.evbit = { BIT_MASK(EV_KEY) },
+		.keybit = {[BIT_WORD(BTN_JOYSTICK)] = BIT_MASK(BTN_JOYSTICK) },
+	},
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_EVBIT |
+			INPUT_DEVICE_ID_MATCH_KEYBIT,
+		.evbit = { BIT_MASK(EV_KEY) },
+		.keybit = { [BIT_WORD(BTN_GAMEPAD)] = BIT_MASK(BTN_GAMEPAD) },
+	},
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_EVBIT |
+			INPUT_DEVICE_ID_MATCH_KEYBIT,
+		.evbit = { BIT_MASK(EV_KEY) },
+		.keybit = { [BIT_WORD(BTN_TRIGGER_HAPPY)] =
+			BIT_MASK(BTN_TRIGGER_HAPPY) },
+	},
+	/* terminating entry */
 	{ },
 };
 
@@ -156,7 +202,7 @@ static int __init cfboost_init(void)
 		return ret;
 	}
 	pm_qos_add_request(&qos_req, PM_QOS_CPU_FREQ_MIN,
-			   PM_QOS_DEFAULT_VALUE);
+ 	         PM_QOS_DEFAULT_VALUE);
 	return 0;
 }
 
