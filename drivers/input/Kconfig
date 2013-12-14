@@ -165,6 +165,15 @@ config INPUT_APMPOWER
 	  To compile this driver as a module, choose M here: the
 	  module will be called apm-power.
 
+config INPUT_CFBOOST
+	tristate "CPU frequency booster"
+	depends on INPUT && CPU_FREQ
+	help
+	  Say Y here if you want to boost frequency upon input events;
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called input-cfboost.
+
 config INPUT_KEYRESET
 	tristate "Reset key"
 	depends on INPUT
