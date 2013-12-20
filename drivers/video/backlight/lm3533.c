@@ -156,12 +156,12 @@ static void lm3533_set_main_current_level(struct i2c_client *client, int level)
 	struct lm3533_device *dev;
 	dev = (struct lm3533_device *)i2c_get_clientdata(client);
 
-	if (lge_get_factory_boot() &&
+	/*if (lge_get_factory_boot() &&
 			((lge_pm_get_cable_type() == CABLE_56K) ||
 			(lge_pm_get_cable_type() == CABLE_130K) ||
 			(lge_pm_get_cable_type() == CABLE_910K))) {
 		level = dev->factory_brightness;
-	}
+	}*/
 
 	if (level == -1)
 		level = dev->default_brightness;

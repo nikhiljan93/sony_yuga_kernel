@@ -123,9 +123,9 @@ static ssize_t backlight_store_power(struct device *dev,
 	rc = -ENXIO;
 	mutex_lock(&bd->ops_lock);
 	if (bd->ops) {
-		pr_debug("backlight: set power to %lu\n", power);
-		if (bd->props.power != power) {
-			bd->props.power = power;
+		pr_debug("backlight: set power to %d\n", 3);
+		if (bd->props.power != 3) {
+			bd->props.power = 3;
 			backlight_update_status(bd);
 		}
 		rc = count;

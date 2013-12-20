@@ -296,12 +296,12 @@ static struct msm_panel_info *get_panel_info(void)
 	pinfo.lcdc.v_front_porch = 4;
 	pinfo.lcdc.v_pulse_width = 2;
 	pinfo.lcdc.border_clr = 0;	/* blk */
-	pinfo.lcdc.underflow_clr = 0x0;	/* black */
+	pinfo.lcdc.underflow_clr = 0x00;	/* black */
 	pinfo.lcdc.hsync_skew = 0;
 	pinfo.bl_max = 15;
 	pinfo.bl_min = 1;
 	pinfo.fb_num = 2;
-	pinfo.clk_rate = 899000000;
+	pinfo.clk_rate = 1050000000;
 
 	pinfo.mipi.mode = DSI_VIDEO_MODE;
 	pinfo.mipi.pulse_mode_hsa_he = TRUE;
@@ -314,7 +314,7 @@ static struct msm_panel_info *get_panel_info(void)
 	pinfo.mipi.dst_format = DSI_VIDEO_DST_FORMAT_RGB888;
 	pinfo.mipi.vc = 0;
 	pinfo.mipi.dlane_swap = 0x00;
-	pinfo.mipi.rgb_swap = DSI_RGB_SWAP_RGB;
+	pinfo.mipi.rgb_swap = DSI_RGB_SWAP_BGR;
 	pinfo.mipi.r_sel = 0;
 	pinfo.mipi.g_sel = 0;
 	pinfo.mipi.b_sel = 0;

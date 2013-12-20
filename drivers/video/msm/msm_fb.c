@@ -121,7 +121,7 @@ static int msm_fb_pan_idle(struct msm_fb_data_type *mfd);
 #ifdef MSM_FB_ENABLE_DBGFS
 
 #define MSM_FB_MAX_DBGFS 1024
-#define MAX_BACKLIGHT_BRIGHTNESS 255
+#define MAX_BACKLIGHT_BRIGHTNESS 128
 
 #define WAIT_FENCE_FIRST_TIMEOUT MSEC_PER_SEC
 #define WAIT_FENCE_FINAL_TIMEOUT 10 * MSEC_PER_SEC

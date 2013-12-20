@@ -84,6 +84,7 @@ struct backlight_properties {
 
 };
 
+
 struct backlight_device {
 	/* Backlight properties */
 	struct backlight_properties props;
